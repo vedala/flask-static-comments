@@ -31,15 +31,15 @@ def comments():
     time_obj = today_dt.time()
     date_str = str(date_obj) + \
         ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
-    file_str = 'name: ' + request.json['name'] + '\n'
-    file_str += 'email: ' + request.json['email'] + '\n'
-    file_str += 'message: ' + request.json['message'] + '\n'
+    file_str = 'name: ' + request.form['name'] + '\n'
+    file_str += 'email: ' + request.form['email'] + '\n'
+    file_str += 'message: ' + request.form['message'] + '\n'
     file_str += 'date: ' + date_str + '\n'
     content = bytes(file_str, 'utf-8')
 
     # create a file in the just created branch with data from "content"
     file_name = random_str + '.yml'
-    full_file_name = '_data/static_comments_app/' + request.json['slug'] + '/' + file_name
+    full_file_name = '_data/static_comments_app/' + request.form['slug'] + '/' + file_name
     repo.create_file( full_file_name,
                       'Create a new comment ' + file_name,
                       content,
@@ -49,4 +49,4 @@ def comments():
                       github_username + ':' + branch_name,
                       'This pull request creates a data file to be used as comment')
 
-    return 'Success'
+    return '', 201
