@@ -23,7 +23,7 @@ def comments():
     master_ref = repo.ref('heads/master')
     sha_str = master_ref.object.sha
     random_str = generate_random_str(16)
-    branch_name = 'refs/heads/static_comments_app_' + random_str
+    branch_name = 'refs/heads/flask_static_comments_' + random_str
     repo.create_ref(branch_name, sha_str)
 
     today_dt = datetime.today()
@@ -39,7 +39,7 @@ def comments():
 
     # create a file in the just created branch with data from "content"
     file_name = random_str + '.yml'
-    full_file_name = '_data/static_comments_app/' + request.form['slug'] + '/' + file_name
+    full_file_name = '_data/flask_static_comments/' + request.form['slug'] + '/' + file_name
     repo.create_file( full_file_name,
                       'Create a new comment ' + file_name,
                       content,
