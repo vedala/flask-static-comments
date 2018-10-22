@@ -1,4 +1,4 @@
-from flask import redirect, request, url_for
+from flask import redirect, request, url_for, make_response, jsonify
 from static_comments_app import app
 import random
 import string
@@ -10,11 +10,27 @@ def generate_random_str(length):
     return ''.join(random.SystemRandom().choice(
         string.ascii_lowercase + string.digits) for _ in range(int(length)))
 
+def form_has_required_fields():
+    return 'name' in request.form and \
+        'email' in request.form and \
+        'message' in request.form and \
+        'slug' in request.form and \
+        'submitting_site' in request.form
+
 @app.route('/comment', methods=["POST"])
 def comments():
     github_token = app.config['GITHUB_TOKEN']
     github_username = app.config['GITHUB_USERNAME']
     github_repo_name = app.config['GITHUB_REPO_NAME']
+    expected_site = app.config['EXPECTED_SITE']
+
+    if not (github_token and github_username and github_repo_name
+                                                        and expected_site):
+        return make_response(jsonify({'error': 'Internal Error'}), 500)
+
+    if not form_has_required_fields():
+        return make_response(
+            jsonify({'error': 'Required form fields not set'}), 400)
 
     gh = github3.login(token=github_token)
     repo = gh.repository(github_username, github_repo_name)
