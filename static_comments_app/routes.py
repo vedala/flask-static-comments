@@ -36,7 +36,10 @@ def comments():
 
     if submitting_site != expected_site:
         return make_response(
-            jsonify({'error': 'Cannot submit comments to this service'}), 400)
+            jsonify({'error':
+                'Site {} cannot submit comments to this service'.format(
+                                                            submitting_site)}),
+            400)
 
     gh = github3.login(token=github_token)
     repo = gh.repository(github_username, github_repo_name)
