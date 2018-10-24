@@ -64,13 +64,16 @@ def comments():
     today_dt = datetime.today()
     date_obj = today_dt.date()
     time_obj = today_dt.time()
-    gravatar_hash = create_gravatar_hash(request.form['email'])
     date_str = str(date_obj) + \
         ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
+    gravatar_hash = create_gravatar_hash(request.form['email'])
+    url_value = request.form['url'] if request.form.get('url') else ''
+
     file_str = 'name: ' + request.form['name'] + '\n'
     file_str += 'message: ' + request.form['message'] + '\n'
     file_str += 'date: ' + date_str + '\n'
     file_str += 'gravatar: ' + gravatar_hash + '\n'
+    file_str += 'url: ' + url_value + '\n'
     content = bytes(file_str, 'utf-8')
 
     # create a file in the just created branch with data from "content"
