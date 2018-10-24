@@ -5,6 +5,7 @@ import string
 import github3
 from urllib.parse import urljoin
 from datetime import datetime
+import hashlib
 
 
 def generate_random_str(length):
@@ -20,6 +21,11 @@ def form_has_required_fields():
 
 def construct_redirect_url(scheme, submitting_site, redirect_to):
     return urljoin(scheme + "://" + submitting_site, redirect_to)
+
+def create_gravatar_hash(email):
+    m = hashlib.md5()
+    m.update(email.strip().lower().encode("utf-8"))
+    return m.hexdigest()
 
 @app.route('/comment', methods=["POST"])
 def comments():
@@ -58,12 +64,13 @@ def comments():
     today_dt = datetime.today()
     date_obj = today_dt.date()
     time_obj = today_dt.time()
+    gravatar_hash = create_gravatar_hash(request.form['email'])
     date_str = str(date_obj) + \
         ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
     file_str = 'name: ' + request.form['name'] + '\n'
-    file_str += 'email: ' + request.form['email'] + '\n'
     file_str += 'message: ' + request.form['message'] + '\n'
     file_str += 'date: ' + date_str + '\n'
+    file_str += 'gravatar: ' + gravatar_hash + '\n'
     content = bytes(file_str, 'utf-8')
 
     # create a file in the just created branch with data from "content"
