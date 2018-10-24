@@ -3,6 +3,7 @@ from static_comments_app import app
 import random
 import string
 import github3
+from urllib.parse import urljoin
 from datetime import datetime
 
 
@@ -16,6 +17,9 @@ def form_has_required_fields():
         'message' in request.form and \
         'slug' in request.form and \
         'submitting_site' in request.form
+
+def construct_redirect_url(scheme, submitting_site, redirect_to):
+    return urljoin(scheme + "://" + submitting_site, redirect_to)
 
 @app.route('/comment', methods=["POST"])
 def comments():
@@ -48,7 +52,7 @@ def comments():
     master_ref = repo.ref('heads/master')
     sha_str = master_ref.object.sha
     random_str = generate_random_str(16)
-    branch_name = 'refs/heads/flask_static_comments_' + random_str
+    branch_name = 'refs/heads/jekyll_comments_' + random_str
     repo.create_ref(branch_name, sha_str)
 
     today_dt = datetime.today()
@@ -64,7 +68,7 @@ def comments():
 
     # create a file in the just created branch with data from "content"
     file_name = random_str + '.yml'
-    full_file_name = '_data/flask_static_comments/' + request.form['slug'] + '/' + file_name
+    full_file_name = '_data/jekyll_comments/' + request.form['slug'] + '/' + file_name
     repo.create_file( full_file_name,
                       'Create a new comment ' + file_name,
                       content,
@@ -73,5 +77,10 @@ def comments():
     repo.create_pull( 'Adding a comment', 'master',
                       github_username + ':' + branch_name,
                       'This pull request creates a data file to be used as comment')
+
+    if request.form.get('redirect_to'):
+        redirect_url = construct_redirect_url(request.scheme, submitting_site,
+                                              request.form['redirect_to'])
+        return redirect(redirect_url)
 
     return '', 201
