@@ -16,8 +16,7 @@ def form_has_required_fields():
     return 'name' in request.form and \
         'email' in request.form and \
         'message' in request.form and \
-        'slug' in request.form and \
-        'submitting_site' in request.form
+        'slug' in request.form
 
 def construct_redirect_url(scheme, submitting_site, redirect_to):
     return urljoin(scheme + "://" + submitting_site, redirect_to)
@@ -32,24 +31,17 @@ def comments():
     github_token = app.config['GITHUB_TOKEN']
     github_username = app.config['GITHUB_USERNAME']
     github_repo_name = app.config['GITHUB_REPO_NAME']
-    expected_site = app.config['EXPECTED_SITE']
 
-    if not (github_token and github_username and github_repo_name
-                                                        and expected_site):
-        return make_response(jsonify({'error': 'Internal Error'}), 500)
+    if not (github_token and github_username and github_repo_name):
+        response = make_response(jsonify({'error': 'Internal Error'}), 500)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     if not form_has_required_fields():
-        return make_response(
+        response = make_response(
             jsonify({'error': 'Required form fields not set'}), 400)
-
-    submitting_site = request.form['submitting_site']
-
-    if submitting_site != expected_site:
-        return make_response(
-            jsonify({'error':
-                'Site {} cannot submit comments to this service'.format(
-                                                            submitting_site)}),
-            400)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     gh = github3.login(token=github_token)
     repo = gh.repository(github_username, github_repo_name)
@@ -88,9 +80,7 @@ def comments():
                       github_username + ':' + branch_name,
                       'This pull request creates a data file to be used as comment')
 
-    if request.form.get('redirect_to'):
-        redirect_url = construct_redirect_url(request.scheme, submitting_site,
-                                              request.form['redirect_to'])
-        return redirect(redirect_url)
-
-    return '', 201
+    response = make_response(
+        jsonify({'success': 'Comment submitted successfully'}), 201)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
