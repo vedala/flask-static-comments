@@ -59,7 +59,12 @@ def comments():
     date_str = str(date_obj) + \
         ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
     gravatar_hash = create_gravatar_hash(request.form['email'])
-    url_value = request.form['url'] if request.form.get('url') else ''
+    if request.form.get('url'):
+        url_value = request.form['url']
+        if not url_value.startswith('http'):
+            url_value = 'http://' + url_value
+    else:
+        url_value = ''
 
     file_str = 'name: ' + request.form['name'] + '\n'
     file_str += 'message: ' + request.form['message'] + '\n'
