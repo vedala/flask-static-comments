@@ -3,9 +3,10 @@ from static_comments_app import app
 import random
 import string
 import github3
-from urllib.parse import urljoin
 from datetime import datetime
 import hashlib
+import re
+import os
 
 
 def generate_random_str(length):
@@ -18,13 +19,48 @@ def form_has_required_fields():
         'message' in request.form and \
         'slug' in request.form
 
-def construct_redirect_url(scheme, submitting_site, redirect_to):
-    return urljoin(scheme + "://" + submitting_site, redirect_to)
-
 def create_gravatar_hash(email):
     m = hashlib.md5()
     m.update(email.strip().lower().encode("utf-8"))
     return m.hexdigest()
+
+def local_print():
+    # message = request.form['message']
+    # print(":".join("{:02x}".format(ord(c)) for c in message))
+    today_dt = datetime.today()
+    date_obj = today_dt.date()
+    time_obj = today_dt.time()
+    date_str = str(date_obj) + \
+        ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
+    gravatar_hash = create_gravatar_hash(request.form['email'])
+    if request.form.get('website'):
+        website_value = request.form['website']
+        if not website_value.startswith('http'):
+            website_value = 'http://' + website_value
+    else:
+        website_value = ''
+    # Message processing
+    #     * Replace CR-LF with LF
+    #     * Replace beginning of string with two spaces
+    #     * Replace a series of newlines with same number of
+    #       newlines but two spaces are appended after the last newline
+    message = request.form['message']
+    message = re.sub("\r\n", "\n", message)
+    message = re.sub("^", "  ", message)
+    pattern = re.compile("(\n+)")
+    message = pattern.sub(r'\1  ', message)
+    file_str = 'name: ' + request.form['name'] + '\n'
+    file_str += 'message: |\n'
+    file_str += message + '\n'
+    file_str += 'date: ' + date_str + '\n'
+    file_str += 'gravatar: ' + gravatar_hash + '\n'
+    file_str += 'website: ' + website_value + '\n'
+    directory = "~"
+    filename_with_path = os.path.join(
+                            os.path.expanduser(directory),
+                            "submit.yml")
+    f = open(filename_with_path, 'w')
+    f.write(file_str)
 
 @app.route('/comment', methods=["POST"])
 def comments():
@@ -43,6 +79,9 @@ def comments():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
+    # local_print()
+    # return "OK"
+
     gh = github3.login(token=github_token)
     repo = gh.repository(github_username, github_repo_name)
 
@@ -59,18 +98,32 @@ def comments():
     date_str = str(date_obj) + \
         ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
     gravatar_hash = create_gravatar_hash(request.form['email'])
-    if request.form.get('url'):
-        url_value = request.form['url']
-        if not url_value.startswith('http'):
-            url_value = 'http://' + url_value
+    if request.form.get('website'):
+        website_value = request.form['website']
+        if not website_value.startswith('http'):
+            website_value = 'http://' + website_value
     else:
-        url_value = ''
+        website_value = ''
+
+    # Message processing
+    #     * This is necessary since we want to write the string as
+    #       YAML's literal string (See the | character written below)
+    #     * Replace CR-LF with LF
+    #     * Replace beginning of string with two spaces
+    #     * Replace a series of newlines with same number of
+    #       newlines but two spaces are appended after the last newline
+    message = request.form['message']
+    message = re.sub("\r\n", "\n", message)
+    message = re.sub("^", "  ", message)
+    pattern = re.compile("(\n+)")
+    message = pattern.sub(r'\1  ', message)
 
     file_str = 'name: ' + request.form['name'] + '\n'
-    file_str += 'message: ' + request.form['message'] + '\n'
+    file_str += 'message: |\n'
+    file_str += message + '\n'
     file_str += 'date: ' + date_str + '\n'
     file_str += 'gravatar: ' + gravatar_hash + '\n'
-    file_str += 'url: ' + url_value + '\n'
+    file_str += 'website: ' + website_value + '\n'
     content = bytes(file_str, 'utf-8')
 
     # create a file in the just created branch with data from "content"
