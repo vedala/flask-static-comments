@@ -62,13 +62,15 @@ def local_print():
     f = open(filename_with_path, 'w')
     f.write(file_str)
 
-@app.route('/comment', methods=["POST"])
-def comments():
+@app.route('/comment/<submitted_token>', methods=["POST"])
+def comments(submitted_token):
     github_token = app.config['GITHUB_TOKEN']
     github_username = app.config['GITHUB_USERNAME']
     github_repo_name = app.config['GITHUB_REPO_NAME']
+    service_token = app.config['SERVICE_TOKEN']
 
-    if not (github_token and github_username and github_repo_name):
+    if not (github_token and github_username and github_repo_name and
+            service_token):
         response = make_response(jsonify({'error': 'Internal Error'}), 500)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
@@ -76,6 +78,12 @@ def comments():
     if not form_has_required_fields():
         response = make_response(
             jsonify({'error': 'Required form fields not set'}), 400)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+
+    if submitted_token != service_token:
+        response = make_response(
+            jsonify({'error': 'Invalid service token supplied'}), 400)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
@@ -126,7 +134,9 @@ def comments():
     file_str += 'website: ' + website_value + '\n'
     content = bytes(file_str, 'utf-8')
 
+    #
     # create a file in the just created branch with data from "content"
+    #
     file_name = random_str + '.yml'
     full_file_name = '_data/jekyll_comments/' + request.form['slug'] + '/' + file_name
     repo.create_file( full_file_name,

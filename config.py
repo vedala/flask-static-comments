@@ -10,4 +10,4 @@ class Config(object):
     GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
     GITHUB_USERNAME = os.environ.get('GITHUB_USERNAME')
     GITHUB_REPO_NAME = os.environ.get('GITHUB_REPO_NAME')
-    EXPECTED_SITE = os.environ.get('EXPECTED_SITE')
+    SERVICE_TOKEN = os.environ.get('SERVICE_TOKEN')
