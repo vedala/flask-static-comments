@@ -29,8 +29,6 @@ To test the commenting system locally, you can clone this repository and run the
 
 ```
 $ git clone https://github.com/vedala/flask-static-comments.git
-
-
 ```
 
 ### Set environment variables
@@ -45,7 +43,7 @@ export SERVICE_TOKEN=XXXXXX
 export FLASK_APP=static_comments_app
 ```
 
-### Setup python virtual environment for the application
+### Setup python virtual environment
 
 Setup python virtual environment (this step requires python 3.X. If your computer does
 have python 3.X installed, you will have to install it using instructions on python
@@ -54,9 +52,9 @@ website). I recommend installing the latest python version - 3.7.X).
 ```
 $ cd flask-static-comments
 
-$ python3 -m venv venv
+$ python3 -m venv myenv
 
-$ source venv/bin/activate
+$ source myenv/bin/activate
 ```
 
 ### Download python packages used by the application
@@ -73,7 +71,7 @@ Run the following command:
 $ flask run
 ```
 
-The application should now be running on `localhost:5000`.
+The application should now be running on `http://localhost:5000`.
 
 
 ## Deploy using a hosting provider
@@ -84,4 +82,4 @@ The endpoint provided by this application will be consumed by the front-end via
 an ajax call. A few items to keep in mind:
 
 * The server will treat the request as CSS, so you need set the CORS headers. The application already sets the CORS header.
-* Use `https` and use a real certificate.
+* Use a real certificate if you want to use `https`. While we can choose to ignore certificate errors when accessing a web application, when accessing api endpoints via ajax calls, the front-end will fail silently.
