@@ -140,7 +140,7 @@ def comments(submitted_token):
     #
     # Create pull request
     #
-    repo.create_pull( 'Adding a comment', 'master',
+    repo.create_pull( 'Comment submission', 'master',
                       github_username + ':' + branch_name,
                       'This pull request creates a data file to be used as comment')
 
