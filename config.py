@@ -11,3 +11,6 @@ class Config(object):
     GITHUB_USERNAME = os.environ.get('GITHUB_USERNAME')
     GITHUB_REPO_NAME = os.environ.get('GITHUB_REPO_NAME')
     SERVICE_TOKEN = os.environ.get('SERVICE_TOKEN')
+    EMAIL_NOTIFICATION = os.environ.get('EMAIL_NOTIFICATION') or "no"
+    SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+    EMAIL_TO = os.environ.get('EMAIL_TO')

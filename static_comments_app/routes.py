@@ -6,6 +6,10 @@ import github3
 from datetime import datetime
 import hashlib
 import re
+import sendgrid
+from sendgrid.helpers.mail import Email, Content, Mail
+# Following is a library from sendgrid, not the python http.client
+from python_http_client import exceptions as sg_exceptions
 
 
 def generate_random_str(length):
@@ -30,6 +34,19 @@ def get_current_datetime_str():
     date_str = str(date_obj) + \
         ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
     return date_str
+
+def send_email(sendgrid_api_key, email_to, email_str):
+    sg = sendgrid.SendGridAPIClient(apikey=sendgrid_api_key)
+    from_email = Email("no_reply@flask_static_comments.com")
+    to_email = Email(email_to)
+    subject = "Sending with SendGrid python library is Fun"
+    content = Content("text/plain", email_str)
+    mail = Mail(from_email, subject, to_email, content)
+    try:
+        response = sg.client.mail.send.post(request_body=mail.get())
+    except sg_exceptions.HTTPError as e:
+        print("Error encountered when sending email: {}".format(e.body))
+    return response.status_code
 
 def website_field_check_scheme():
     #
@@ -71,6 +88,14 @@ def generate_file_str(name, message, date_str, gravatar_hash, website_value):
     file_str += 'website: ' + website_value + '\n'
     return file_str
 
+def generate_email_str(name, message, date_str, email, website_value):
+    email_str = 'name: ' + name + '\n'
+    email_str += 'message: ' + message + '\n'
+    email_str += 'date: ' + date_str + '\n'
+    email_str += 'email: ' + email + '\n'
+    email_str += 'website: ' + website_value + '\n'
+    return email_str
+
 @app.route('/comment/<submitted_token>', methods=["POST"])
 def comments(submitted_token):
     github_token = app.config['GITHUB_TOKEN']
@@ -100,6 +125,21 @@ def comments(submitted_token):
     gravatar_hash = create_gravatar_hash(request.form['email'])
     website_value = website_field_check_scheme()
     message = process_message()
+
+    #
+    # Generate content to be sent as email notification
+    #
+    email_notification = app.config['EMAIL_NOTIFICATION'] 
+    email_to = app.config['EMAIL_TO'] 
+    sendgrid_api_key = app.config['SENDGRID_API_KEY'] 
+    if email_notification == "yes":
+        if not (email_to or sendgrid_api_key):
+            print("Required environment variables missing"
+                  " for email notification")
+        else:
+            email_str = generate_email_str(request.form['name'], message,
+                date_str, request.form['email'], website_value)
+            send_email(sendgrid_api_key, email_to, email_str)
 
     #
     # Generate data to be written to file and encode it
