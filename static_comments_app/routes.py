@@ -39,8 +39,8 @@ def send_email(sendgrid_api_key, email_to, email_str):
     sg = sendgrid.SendGridAPIClient(apikey=sendgrid_api_key)
     from_email = Email("no_reply@flask_static_comments.com")
     to_email = Email(email_to)
-    subject = "Sending with SendGrid python library is Fun"
-    content = Content("text/plain", email_str)
+    subject = "A comment was submitted on your blog"
+    content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
         response = sg.client.mail.send.post(request_body=mail.get())
@@ -89,11 +89,12 @@ def generate_file_str(name, message, date_str, gravatar_hash, website_value):
     return file_str
 
 def generate_email_str(name, message, date_str, email, website_value):
-    email_str = 'name: ' + name + '\n'
-    email_str += 'message: ' + message + '\n'
-    email_str += 'date: ' + date_str + '\n'
-    email_str += 'email: ' + email + '\n'
-    email_str += 'website: ' + website_value + '\n'
+    email_str = '<pre>'
+    email_str += 'name: ' + name + '<br>'
+    email_str += 'message: ' + message + '<br>'
+    email_str += 'date: ' + date_str + '<br>'
+    email_str += 'email: ' + email + '<br>'
+    email_str += 'website: ' + website_value + '<br></pre>'
     return email_str
 
 @app.route('/comment/<submitted_token>', methods=["POST"])
