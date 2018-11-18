@@ -130,9 +130,9 @@ def comments(submitted_token):
     #
     # Generate content to be sent as email notification
     #
-    email_notification = app.config['EMAIL_NOTIFICATION'] 
-    email_to = app.config['EMAIL_TO'] 
-    sendgrid_api_key = app.config['SENDGRID_API_KEY'] 
+    email_notification = app.config['EMAIL_NOTIFICATION']
+    email_to = app.config['EMAIL_TO']
+    sendgrid_api_key = app.config['SENDGRID_API_KEY']
     if email_notification == "yes":
         if not (email_to or sendgrid_api_key):
             print("Required environment variables missing"
