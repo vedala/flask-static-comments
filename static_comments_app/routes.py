@@ -131,6 +131,8 @@ def comments(submitted_token):
     # Generate content to be sent as email notification
     #
     email_notification = app.config['EMAIL_NOTIFICATION']
+    if email_notification:
+        email_notification = email_notification.lower()
     email_to = app.config['EMAIL_TO']
     sendgrid_api_key = app.config['SENDGRID_API_KEY']
     if email_notification == "yes":
