@@ -7,9 +7,14 @@ The application in this repository is a flask application that accepts comment s
 github repository as a pull request.
 
 
-## Environment variables
+## Configration
 
-Following environment variables are required by the application.
+The application is configured setting the following environment variables:
+
+
+### Required configuration
+
+The following environment variables are required by the application:
 
 | Environment Variable | Description |
 | --- | --- |
@@ -18,6 +23,18 @@ Following environment variables are required by the application.
 | `GITHUB_REPO_NAME` | Repository name of the jekyll blog.
 | `SERVICE_TOKEN` | A unique token that you generate for your deployment of the server.
 | `FLASK_APP` | The name of the flask application package within this repository.
+
+
+The following optional configuration can be set to enable specific features:
+
+### Email notifications on comment submission
+
+| Environment Variable | Description |
+| --- | --- |
+|`EMAIL_NOTIFICATION`| To enable email notifications set this variable's value to "yes". Default is "no".|
+|`EMAIL_TO`|The email address for recieving notifications.|
+|`SENDGRID_API_KEY`|API key of Sendgrid account.|
+
 
 
 
