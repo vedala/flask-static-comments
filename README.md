@@ -7,7 +7,7 @@ The application in this repository is a flask application that accepts comment s
 github repository as a pull request.
 
 
-## Configration
+## Configuration
 
 The application is configured setting the following environment variables:
 
@@ -25,7 +25,8 @@ The following environment variables are required by the application:
 | `FLASK_APP` | The name of the flask application package within this repository.
 
 
-The following optional configuration can be set to enable specific features:
+The following optional configuration can be set to enable email notifications on
+comment submission:
 
 ### Email notifications on comment submission
 
