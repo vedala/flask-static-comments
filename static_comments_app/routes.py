@@ -97,6 +97,45 @@ def generate_email_str(name, message, date_str, email, website_value):
     email_str += 'website: ' + website_value + '<br></pre>'
     return email_str
 
+def create_github_pull_request(github_token, \
+    github_username, github_repo_name, slug, content):
+    #
+    # Authenticate the github account and get the repository object
+    #
+    gh = github3.login(token=github_token)
+    repo = gh.repository(github_username, github_repo_name)
+
+    #
+    # get sha for latest commit on master branch
+    #
+    master_ref = repo.ref('heads/master')
+    sha_str = master_ref.object.sha
+
+    #
+    # Create a branch on the repo
+    #
+    random_str = generate_random_str(16)
+    branch_name = 'refs/heads/jekyll_comments_' + random_str
+    repo.create_ref(branch_name, sha_str)
+
+    #
+    # create a file in the just created branch with data from variable "content"
+    #
+    file_name = random_str + '.yml'
+    full_file_name = '_data/jekyll_comments/' + slug + '/' + file_name
+    repo.create_file( full_file_name,
+                      'Create a new comment ' + file_name,
+                      content,
+                      branch_name)
+
+    #
+    # Create pull request
+    #
+    repo.create_pull( 'Comment submission', 'master',
+                      github_username + ':' + branch_name,
+                      'This pull request creates a data file to be used as comment')
+    return True
+
 @app.route('/comment/<submitted_token>', methods=["POST"])
 def comments(submitted_token):
     github_token = app.config['GITHUB_TOKEN']
@@ -151,43 +190,13 @@ def comments(submitted_token):
                                 gravatar_hash, website_value)
     content = bytes(file_str, 'utf-8')
 
-    #
-    # Authenticate the github account and get the repository object
-    #
-    gh = github3.login(token=github_token)
-    repo = gh.repository(github_username, github_repo_name)
+    if not create_github_pull_request(github_token,
+        github_username, github_repo_name, request.form['slug'], content):
+        print("Problem encountered during creation of pull request")
+        response = make_response(jsonify({'error': 'Internal Error'}), 500)
+    else:
+        response = make_response(
+            jsonify({'success': 'Comment submitted successfully'}), 201)
 
-    #
-    # get sha for latest commit on master branch
-    #
-    master_ref = repo.ref('heads/master')
-    sha_str = master_ref.object.sha
-
-    #
-    # Create a branch on the repo
-    #
-    random_str = generate_random_str(16)
-    branch_name = 'refs/heads/jekyll_comments_' + random_str
-    repo.create_ref(branch_name, sha_str)
-
-    #
-    # create a file in the just created branch with data from variable "content"
-    #
-    file_name = random_str + '.yml'
-    full_file_name = '_data/jekyll_comments/' + request.form['slug'] + '/' + file_name
-    repo.create_file( full_file_name,
-                      'Create a new comment ' + file_name,
-                      content,
-                      branch_name)
-
-    #
-    # Create pull request
-    #
-    repo.create_pull( 'Comment submission', 'master',
-                      github_username + ':' + branch_name,
-                      'This pull request creates a data file to be used as comment')
-
-    response = make_response(
-        jsonify({'success': 'Comment submitted successfully'}), 201)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
