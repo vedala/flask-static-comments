@@ -190,7 +190,7 @@ def comments(submitted_token):
                                 gravatar_hash, website_value)
     content = bytes(file_str, 'utf-8')
 
-    if not create_github_pull_request(github_token,
+    if not create_github_pull_request(github_token, \
         github_username, github_repo_name, request.form['slug'], content):
         print("Problem encountered during creation of pull request")
         response = make_response(jsonify({'error': 'Internal Error'}), 500)
