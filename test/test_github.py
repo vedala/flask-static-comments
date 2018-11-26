@@ -12,22 +12,32 @@ class GithubTestCase(unittest.TestCase):
             "content-line-1\ncontent-line-2\n")
         mock_github3_login.assert_called_once_with(token="my-github-token")
 
-    @patch('static_comments_app.routes.generate_random_str', return_value="abcdef")
-    @patch('github3.repository')
     @patch('github3.login')
-    def test_github3_repository(self, mock_github3_login,
-                                mock_github3_repository, mock_generate_random_str):
-        mock_sha = MagicMock()
-        mock_sha.return_value = "my-sha-str"
-        mock_github3_repository.return_value \
-            .ref.return_value \
-            .object.return_value.sha = mock_sha
+    def test_github3_repository(self, mock_github3_login):
+
+        sha_str = "my-sha-str"
+        github_username = "my-github-username"
+        github_repo_name = "my-github-repo-name"
+
+        mock_repository = MagicMock()
+        mock_github3_login.return_value.repository = mock_repository
+
+        mock_ref = MagicMock()
+        mock_repository.return_value.ref = mock_ref
+
         routes.create_github_pull_request("my-github-token",
-            "my-github-username", "my-github-repo-name", "my-slug",
+            github_username, github_repo_name, "my-slug",
             "content-line-1\ncontent-line-2\n")
-        mock_github3_login.assert_called_once_with(token="my-github-token")
-        self.assertEqual("my-sha-str", mock_sha())
+
+        mock_repository.assert_called_once_with(github_username,
+                                                github_repo_name)
+        mock_ref.assert_called_once_with("heads/master")
+
+    @patch('static_comments_app.routes.generate_random_str', return_value="abcdef")
+    def not_ready_yet(self):
         mock_generate_random_str.assert_called_once_with(16)
+        mock_create_ref.assert_called_once_with(branch_name, "abc")
+        pass
 
 if __name__ == '__main__':
     unittest.main()
