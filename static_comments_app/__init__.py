@@ -41,7 +41,7 @@ if not app.debug:
         maxBytes=51200,
         backupCount=10)
     file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)sL%(lineno)d'))
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d'))
     file_handler.setLevel(logging.INFO)
     app.logger.addHandler(file_handler)
 

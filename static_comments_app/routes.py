@@ -175,7 +175,7 @@ def comments(submitted_token):
     email_to = app.config['EMAIL_TO']
     sendgrid_api_key = app.config['SENDGRID_API_KEY']
     if email_notification == "yes":
-        if not (email_to or sendgrid_api_key):
+        if not (email_to and sendgrid_api_key):
             app.logger.info("Required environment variables missing"
                   " for email notification")
         else:
