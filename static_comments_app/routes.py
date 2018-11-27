@@ -146,19 +146,16 @@ def comments(submitted_token):
     if not (github_token and github_username and github_repo_name and
             service_token):
         response = make_response(jsonify({'error': 'Internal Error'}), 500)
-        response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
     if not form_has_required_fields():
         response = make_response(
             jsonify({'error': 'Required form fields not set'}), 400)
-        response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
     if submitted_token != service_token:
         response = make_response(
             jsonify({'error': 'Invalid service token supplied'}), 400)
-        response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
     date_str = get_current_datetime_str()
@@ -198,5 +195,4 @@ def comments(submitted_token):
         response = make_response(
             jsonify({'success': 'Comment submitted successfully'}), 201)
 
-    response.headers.add('Access-Control-Allow-Origin', '*')
     return response
