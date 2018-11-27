@@ -45,7 +45,7 @@ def send_email(sendgrid_api_key, email_to, email_str):
     try:
         response = sg.client.mail.send.post(request_body=mail.get())
     except sg_exceptions.HTTPError as e:
-        print("Error encountered when sending email: {}".format(e.body))
+        app.logger.info("Error encountered when sending email: {}".format(e.body))
     return response.status_code
 
 def website_field_check_scheme():
@@ -176,7 +176,7 @@ def comments(submitted_token):
     sendgrid_api_key = app.config['SENDGRID_API_KEY']
     if email_notification == "yes":
         if not (email_to or sendgrid_api_key):
-            print("Required environment variables missing"
+            app.logger.info("Required environment variables missing"
                   " for email notification")
         else:
             email_str = generate_email_str(request.form['name'], message,
@@ -192,7 +192,7 @@ def comments(submitted_token):
 
     if not create_github_pull_request(github_token, \
         github_username, github_repo_name, request.form['slug'], content):
-        print("Problem encountered during creation of pull request")
+        app.logger.info("Problem encountered during creation of pull request")
         response = make_response(jsonify({'error': 'Internal Error'}), 500)
     else:
         response = make_response(
