@@ -127,24 +127,40 @@ def create_github_pull_request(github_token, \
     #
     random_str = generate_random_str(16)
     branch_name = 'refs/heads/jekyll_comments_' + random_str
-    repo.create_ref(branch_name, sha_str)
+    try:
+        repo.create_ref(branch_name, sha_str)
+    except github3.exceptions.GitHubException as e:
+        app.logger.info(
+            "Error in call to github3 repository create_ref() method: {}".format(str(e)))
+        return False
 
     #
     # create a file in the just created branch with data from variable "content"
     #
     file_name = random_str + '.yml'
     full_file_name = '_data/jekyll_comments/' + slug + '/' + file_name
-    repo.create_file( full_file_name,
-                      'Create a new comment ' + file_name,
-                      content,
-                      branch_name)
+    try:
+        repo.create_file( full_file_name,
+                        'Create a new comment ' + file_name,
+                        content,
+                        branch_name)
+    except github3.exceptions.GitHubException as e:
+        app.logger.info(
+            "Error in call to github3 repository create_file() method: {}".format(str(e)))
+        return False
 
     #
     # Create pull request
     #
-    repo.create_pull( 'Comment submission', 'master',
-                      github_username + ':' + branch_name,
-                      'This pull request creates a data file to be used as comment')
+    try:
+        repo.create_pull( 'Comment submission', 'master',
+            github_username + ':' + branch_name,
+            'This pull request creates a data file to be used as comment')
+    except github3.exceptions.GitHubException as e:
+        app.logger.info(
+            "Error in call to github3 repository create_pull() method: {}".format(str(e)))
+        return False
+
     return True
 
 @app.route('/comment/<submitted_token>', methods=["POST"])

@@ -148,7 +148,123 @@ class GithubTestCase(unittest.TestCase):
         retval = routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
             "content-line-1\ncontent-line-2\n")
+
         self.assertEqual(False, retval)
+        mock_ref.assert_called_once_with("heads/master")
+
+    @patch('static_comments_app.routes.generate_random_str', return_value="abcdef")
+    @patch('github3.login')
+    def test_invalid_create_ref(self, mock_github3_login,
+                                        mock_generate_random_str):
+
+        mock_repository = MagicMock()
+        mock_github3_login.return_value.repository = mock_repository
+
+        mock_ref = MagicMock()
+        mock_repository.return_value.ref = mock_ref
+
+        sha_str = "my-sha-str"
+        mock_object = MagicMock(sha=sha_str)
+        mock_ref.return_value.object = mock_object
+
+        mock_create_ref = MagicMock()
+        mock_repository.return_value.create_ref = mock_create_ref
+
+        response = MagicMock(spec=Response)
+        response.status_code = 422
+        response.content = "some content"
+        response.json.return_value = "{}"
+        mock_create_ref.side_effect = \
+            github3.exceptions.UnprocessableEntity(response)
+
+        retval = routes.create_github_pull_request("my-github-token",
+            "my-github-username", "my-github-repo-name", "my-slug",
+            "content-line-1\ncontent-line-2\n")
+
+        self.assertEqual(False, retval)
+        mock_create_ref.assert_called_once_with(
+            "refs/heads/jekyll_comments_abcdef", sha_str)
+
+    @patch('static_comments_app.routes.generate_random_str', return_value="abcdef")
+    @patch('github3.login')
+    def test_invalid_create_file(self, mock_github3_login,
+                        mock_generate_random_str):
+
+        mock_repository = MagicMock()
+        mock_github3_login.return_value.repository = mock_repository
+
+        mock_ref = MagicMock()
+        mock_repository.return_value.ref = mock_ref
+
+        sha_str = "my-sha-str"
+        mock_object = MagicMock(sha=sha_str)
+        mock_ref.return_value.object = mock_object
+
+        mock_create_ref = MagicMock()
+        mock_repository.return_value.create_ref = mock_create_ref
+
+        mock_create_file = MagicMock()
+        mock_repository.return_value.create_file = mock_create_file
+
+        response = MagicMock(spec=Response)
+        response.status_code = 404
+        response.content = "some content"
+        response.json.return_value = "{}"
+        mock_create_file.side_effect = \
+            github3.exceptions.NotFoundError(response)
+
+        retval = routes.create_github_pull_request("my-github-token",
+            "my-github-username", "my-github-repo-name", "my-slug",
+            "content-line-1\ncontent-line-2\n")
+
+        self.assertEqual(False, retval)
+        mock_create_file.assert_called_once_with(
+            "_data/jekyll_comments/my-slug/abcdef.yml",
+            "Create a new comment abcdef.yml",
+            "content-line-1\ncontent-line-2\n",
+            "refs/heads/jekyll_comments_abcdef")
+
+    @patch('static_comments_app.routes.generate_random_str', return_value="abcdef")
+    @patch('github3.login')
+    def test_invalid_create_pull(self, mock_github3_login,
+                        mock_generate_random_str):
+
+        mock_repository = MagicMock()
+        mock_github3_login.return_value.repository = mock_repository
+
+        mock_ref = MagicMock()
+        mock_repository.return_value.ref = mock_ref
+
+        sha_str = "my-sha-str"
+        mock_object = MagicMock(sha=sha_str)
+        mock_ref.return_value.object = mock_object
+
+        mock_create_ref = MagicMock()
+        mock_repository.return_value.create_ref = mock_create_ref
+
+        mock_create_file = MagicMock()
+        mock_repository.return_value.create_file = mock_create_file
+
+        mock_create_pull = MagicMock()
+        mock_repository.return_value.create_pull = mock_create_pull
+
+        response = MagicMock(spec=Response)
+        response.status_code = 422
+        response.content = "some content"
+        response.json.return_value = "{}"
+        mock_create_pull.side_effect = \
+            github3.exceptions.NotFoundError(response)
+
+        retval = routes.create_github_pull_request("my-github-token",
+            "my-github-username", "my-github-repo-name", "my-slug",
+            "content-line-1\ncontent-line-2\n")
+
+        self.assertEqual(False, retval)
+        mock_create_pull.assert_called_once_with(
+            "Comment submission",
+            "master",
+            "my-github-username:refs/heads/jekyll_comments_abcdef",
+            "This pull request creates a data file to be used as comment")
 
 if __name__ == '__main__':
     unittest.main()
