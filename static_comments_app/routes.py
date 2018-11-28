@@ -103,7 +103,12 @@ def create_github_pull_request(github_token, \
     # Authenticate the github account and get the repository object
     #
     gh = github3.login(token=github_token)
-    repo = gh.repository(github_username, github_repo_name)
+    try:
+        repo = gh.repository(github_username, github_repo_name)
+    except github3.exceptions.GitHubException as e:
+        app.logger.info(
+            "Error in call to github3 repository() method: {}".format(str(e)))
+        return False
 
     #
     # get sha for latest commit on master branch
@@ -164,14 +169,14 @@ def comments(submitted_token):
     message = process_message()
 
     #
-    # Generate content to be sent as email notification
+    # Check and send email notification for comment submission
     #
     email_notification = app.config['EMAIL_NOTIFICATION']
     if email_notification:
         email_notification = email_notification.lower()
-    email_to = app.config['EMAIL_TO']
-    sendgrid_api_key = app.config['SENDGRID_API_KEY']
     if email_notification == "yes":
+        email_to = app.config['EMAIL_TO']
+        sendgrid_api_key = app.config['SENDGRID_API_KEY']
         if not (email_to and sendgrid_api_key):
             app.logger.info("Required environment variables missing"
                   " for email notification")

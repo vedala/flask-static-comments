@@ -1,7 +1,9 @@
 import unittest
+import warnings
 from unittest.mock import patch, MagicMock
 from static_comments_app import routes
 import github3
+from requests.models import Response
 
 class GithubTestCase(unittest.TestCase):
 
@@ -109,6 +111,24 @@ class GithubTestCase(unittest.TestCase):
             "master",
             "my-github-username:refs/heads/jekyll_comments_abcdef",
             "This pull request creates a data file to be used as comment")
+
+    @patch('github3.login')
+    def test_authentication_failure(self, mock_github3_login):
+
+        mock_repository = MagicMock()
+        mock_github3_login.return_value.repository = mock_repository
+
+        response = MagicMock(spec=Response)
+        response.status_code = 401
+        response.content = "some content"
+        response.json.return_value = b'{"abcd"}'
+        mock_repository.side_effect = \
+            github3.exceptions.AuthenticationFailed(response)
+
+        retval = routes.create_github_pull_request("my-github-token",
+            "my-github-username", "my-github-repo-name", "my-slug",
+            "content-line-1\ncontent-line-2\n")
+        self.assertEqual(False, retval)
 
 if __name__ == '__main__':
     unittest.main()
