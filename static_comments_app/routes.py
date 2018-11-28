@@ -32,7 +32,8 @@ def get_current_datetime_str():
     date_obj = today_dt.date()
     time_obj = today_dt.time()
     date_str = str(date_obj) + \
-        ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour, time_obj.minute, time_obj.second)
+        ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour,
+                                       time_obj.minute, time_obj.second)
     return date_str
 
 def send_email(sendgrid_api_key, email_to, email_str):
@@ -46,7 +47,9 @@ def send_email(sendgrid_api_key, email_to, email_str):
         response = sg.client.mail.send.post(request_body=mail.get())
     except sg_exceptions.HTTPError as e:
         app.logger.info("Error encountered when sending email: {}".format(e.body))
-    return response.status_code
+        return False
+
+    return True
 
 def website_field_check_scheme():
     #
@@ -106,8 +109,8 @@ def create_github_pull_request(github_token, \
     try:
         repo = gh.repository(github_username, github_repo_name)
     except github3.exceptions.GitHubException as e:
-        app.logger.info(
-            "Error in call to github3 repository() method: {}".format(str(e)))
+        app.logger.info("Error in call to github3 {} method: {}".format(
+                                                "repository()", str(e)))
         return False
 
     #
@@ -116,8 +119,8 @@ def create_github_pull_request(github_token, \
     try:
         master_ref = repo.ref('heads/master')
     except github3.exceptions.GitHubException as e:
-        app.logger.info(
-            "Error in call to github3 repository ref() method: {}".format(str(e)))
+        app.logger.info("Error in call to github3 {} method: {}".format(
+                                             "repository ref()", str(e)))
         return False
 
     sha_str = master_ref.object.sha
@@ -130,8 +133,8 @@ def create_github_pull_request(github_token, \
     try:
         repo.create_ref(branch_name, sha_str)
     except github3.exceptions.GitHubException as e:
-        app.logger.info(
-            "Error in call to github3 repository create_ref() method: {}".format(str(e)))
+        app.logger.info("Error in call to github3 {} method: {}".format(
+                                     "repository create_ref()", str(e)))
         return False
 
     #
@@ -145,8 +148,8 @@ def create_github_pull_request(github_token, \
                         content,
                         branch_name)
     except github3.exceptions.GitHubException as e:
-        app.logger.info(
-            "Error in call to github3 repository create_file() method: {}".format(str(e)))
+        app.logger.info("Error in call to github3 {} method: {}".format(
+                                  "repository create_file()", str(e)))
         return False
 
     #
@@ -157,8 +160,8 @@ def create_github_pull_request(github_token, \
             github_username + ':' + branch_name,
             'This pull request creates a data file to be used as comment')
     except github3.exceptions.GitHubException as e:
-        app.logger.info(
-            "Error in call to github3 repository create_pull() method: {}".format(str(e)))
+        app.logger.info("Error in call to github3 {} method: {}".format(
+                                    "repository create_pull()", str(e)))
         return False
 
     return True
