@@ -113,7 +113,13 @@ def create_github_pull_request(github_token, \
     #
     # get sha for latest commit on master branch
     #
-    master_ref = repo.ref('heads/master')
+    try:
+        master_ref = repo.ref('heads/master')
+    except github3.exceptions.GitHubException as e:
+        app.logger.info(
+            "Error in call to github3 repository ref() method: {}".format(str(e)))
+        return False
+
     sha_str = master_ref.object.sha
 
     #

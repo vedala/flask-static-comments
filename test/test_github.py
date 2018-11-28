@@ -121,9 +121,29 @@ class GithubTestCase(unittest.TestCase):
         response = MagicMock(spec=Response)
         response.status_code = 401
         response.content = "some content"
-        response.json.return_value = b'{"abcd"}'
+        response.json.return_value = "{}"
         mock_repository.side_effect = \
             github3.exceptions.AuthenticationFailed(response)
+
+        retval = routes.create_github_pull_request("my-github-token",
+            "my-github-username", "my-github-repo-name", "my-slug",
+            "content-line-1\ncontent-line-2\n")
+        self.assertEqual(False, retval)
+
+    @patch('github3.login')
+    def test_invalid_ref_call(self, mock_github3_login):
+
+        mock_repository = MagicMock()
+        mock_github3_login.return_value.repository = mock_repository
+
+        mock_ref = MagicMock()
+        mock_repository.return_value.ref = mock_ref
+
+        response = MagicMock(spec=Response)
+        response.status_code = 404
+        response.content = "some content"
+        response.json.return_value = "{}"
+        mock_ref.side_effect = github3.exceptions.NotFoundError(response)
 
         retval = routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
