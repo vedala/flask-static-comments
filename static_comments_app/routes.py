@@ -208,7 +208,8 @@ def comments(submitted_token):
         else:
             email_str = generate_email_str(request.form['name'], message,
                 date_str, request.form['email'], website_value)
-            send_email(sendgrid_api_key, email_to, email_str)
+            if not send_email(sendgrid_api_key, email_to, email_str):
+                app.logger.info("Problem encountered in send_email")
 
     #
     # Generate data to be written to file and encode it
