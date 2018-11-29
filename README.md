@@ -28,7 +28,7 @@ The following environment variables are required by the application:
 The following optional configuration can be set to enable email notifications on
 comment submission:
 
-### Email notifications on comment submission
+### Email notifications on comment submissions
 
 | Environment Variable | Description |
 | --- | --- |
@@ -37,7 +37,17 @@ comment submission:
 |`SENDGRID_API_KEY`|API key of Sendgrid account.|
 
 
+### Email notifications on application errors
 
+| Environment Variable | Description |
+| --- | --- |
+|`LOGGING_EMAIL_NOTIFY`| Set this variable's value to "yes" to receive emails on application errors. Default is "no".|
+|`MAIL_SERVER`| Set to your choice of SMTP server. For example, `smtp.sendgrid.net`.|
+|`MAIL_PORT`| The port to be used on mail server. A common setting is `587`.|
+|`MAIL_USE_TLS`| Set to `1` to use SSL or `0` for no SSL.|
+|`MAIL_USERNAME`| The username of the account to be used for sending emails. If using Sendgrid, set this to `apikey`.|
+|`MAIL_PASSWORD`| The password of the account to be used for sending emails. If using Sendgrid, the value of this variable is your Sendgrid account's API key.|
+|`LOGGING_EMAIL_TO`| Email address of the recipient to receive notifications.|
 
 ## Test on localhost
 
