@@ -1,4 +1,5 @@
-from flask import redirect, request, url_for, make_response, jsonify
+from flask import redirect, request, url_for, make_response, jsonify, \
+    render_template
 from static_comments_app import app
 import random
 import string
@@ -193,8 +194,10 @@ def spam_check():
             'user_agent': user_agent,
             'referrer': referrer,
             'comment_type': comment_type,
-            'comment_author': comment_author,
-            'comment_author_email': comment_author_email,
+        #    'comment_author': comment_author,
+        #    'comment_author_email': comment_author_email,
+            'comment_author': 'viagra-test-123',
+            'comment_author_email': 'akismet-guaranteed-spam@example.com',
             'comment_content': comment_content,
             'website': website
         })
@@ -211,8 +214,12 @@ def send_spam_email(sendgrid_api_key, email_to, email_str):
     to_email = Email(email_to)
     subject = "A comment was submitted on your blog"
 
-    email_str += "\n\nThis comment has been identified as spam.\n"
+    random_str = generate_random_str(16)
 
+    email_str += "<br>This comment has been identified as spam, \
+                 click the link below to mark the comment as valid.<br><br>"
+    email_str += render_template(
+        'is_spam.html', email_str=email_str, random_str=random_str)
     content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
@@ -245,6 +252,10 @@ def check_email_env_variables():
     email_to = app.config['EMAIL_TO']
     sendgrid_api_key = app.config['SENDGRID_API_KEY']
     return email_to and sendgrid_api_key
+
+@app.route('/mark_it_spam/<random_str>')
+def mark_it_spam(random_str):
+    pass
 
 @app.route('/comment/<submitted_token>', methods=["POST"])
 def comments(submitted_token):
