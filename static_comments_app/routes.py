@@ -205,11 +205,41 @@ def spam_check():
 
     return (True, is_spam)
 
-def send_spam_email():
-    print("send_spam_email called")
+def send_spam_email(sendgrid_api_key, email_to, email_str):
+    sg = sendgrid.SendGridAPIClient(apikey=sendgrid_api_key)
+    from_email = Email("no_reply@flask_static_comments.com")
+    to_email = Email(email_to)
+    subject = "A comment was submitted on your blog"
 
-def send_not_spam_email():
-    print("send_spam_email called")
+    email_str += "\n\nThis comment has been identified as spam.\n"
+
+    content = Content("text/html", email_str)
+    mail = Mail(from_email, subject, to_email, content)
+    try:
+        response = sg.client.mail.send.post(request_body=mail.get())
+    except sg_exceptions.HTTPError as e:
+        app.logger.info("Error encountered when sending email: {}".format(e.body))
+        return False
+
+    return True
+
+def send_not_spam_email(sendgrid_api_key, email_to, email_str):
+    sg = sendgrid.SendGridAPIClient(apikey=sendgrid_api_key)
+    from_email = Email("no_reply@flask_static_comments.com")
+    to_email = Email(email_to)
+    subject = "A comment was submitted on your blog"
+
+    email_str += "\n\nThis comment has been identified as valid (not spam).\n"
+
+    content = Content("text/html", email_str)
+    mail = Mail(from_email, subject, to_email, content)
+    try:
+        response = sg.client.mail.send.post(request_body=mail.get())
+    except sg_exceptions.HTTPError as e:
+        app.logger.info("Error encountered when sending email: {}".format(e.body))
+        return False
+
+    return True
 
 def check_email_env_variables():
     email_to = app.config['EMAIL_TO']
@@ -274,9 +304,17 @@ def comments(submitted_token):
             if not retval:
                 app.logger.info("Problem encountered during spam check")
             elif is_spam:
-                retval = send_spam_email()
+                email_str = generate_email_str(request.form['name'], message,
+                    date_str, request.form['email'], website_value)
+                retval = send_spam_email(app.config['SENDGRID_API_KEY'],
+                                         app.config['EMAIL_TO'],
+                                         email_str)
             else:
-                retval = send_not_spam_email()
+                email_str = generate_email_str(request.form['name'], message,
+                    date_str, request.form['email'], website_value)
+                retval = send_not_spam_email(app.config['SENDGRID_API_KEY'],
+                                         app.config['EMAIL_TO'],
+                                         email_str)
     elif email_notification == "yes":
         #
         # Send a regular email notification (without spam-related links)
