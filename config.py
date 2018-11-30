@@ -25,3 +25,7 @@ class Config(object):
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     LOGGING_EMAIL_TO = os.environ.get('LOGGING_EMAIL_TO')
+
+    # Variables for spam prevention
+    SPAM_PREVENTION = os.environ.get('SPAM_PREVENTION') or 'no'
+    AKISMET_API_KEY = os.environ.get('AKISMET_API_KEY')

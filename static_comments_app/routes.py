@@ -10,6 +10,7 @@ import sendgrid
 from sendgrid.helpers.mail import Email, Content, Mail
 # Following is a library from sendgrid, not the python http.client
 from python_http_client import exceptions as sg_exceptions
+from pykismet3 import Akismet, AkismetError
 
 
 def generate_random_str(length):
@@ -166,6 +167,55 @@ def create_github_pull_request(github_token, \
 
     return True
 
+def spam_check():
+    user_ip = request.remote_addr
+    user_agent = str(request.user_agent)
+    referrer = request.environ.get('HTTP_REFERER') or "unknown"
+    comment_type = "comment"
+
+    comment_author = request.form['name']
+    comment_author_email = request.form['email']
+    comment_content = request.form['message']
+    website = request.form['website']
+
+    akismet_api_key = app.config['AKISMET_API_KEY']
+    if not akismet_api_key:
+        app.logger.info(
+            "Required environment variable AKISMET_API_KEY missing")
+        return (False, None)
+
+    a = Akismet(blog_url=request.base_url,
+                api_key=akismet_api_key,
+                user_agent=user_agent)
+
+    try:
+        is_spam = a.check({'user_ip': user_ip,
+            'user_agent': user_agent,
+            'referrer': referrer,
+            'comment_type': comment_type,
+            'comment_author': comment_author,
+            'comment_author_email': comment_author_email,
+            'comment_content': comment_content,
+            'website': website
+        })
+    except AkismetError as e:
+        app.logger.info(
+            "Error in call to pykismet3.check(): {}".format(str(e)))
+        return (False, None)
+
+    return (True, is_spam)
+
+def send_spam_email():
+    print("send_spam_email called")
+
+def send_not_spam_email():
+    print("send_spam_email called")
+
+def check_email_env_variables():
+    email_to = app.config['EMAIL_TO']
+    sendgrid_api_key = app.config['SENDGRID_API_KEY']
+    return email_to and sendgrid_api_key
+
 @app.route('/comment/<submitted_token>', methods=["POST"])
 def comments(submitted_token):
     github_token = app.config['GITHUB_TOKEN']
@@ -194,17 +244,46 @@ def comments(submitted_token):
     message = process_message()
 
     #
-    # Check and send email notification for comment submission
+    # We are using akismet spam prevention. Akismet provides spam check call
+    # returns a boolean value identify a submission as either spam or valid.
+    # In addition, Akismet requires that we submit missed spam and false
+    # positives (a false positive is a submission that Aksimet identifies as
+    # spam but is actually a valid submission).
+    #
+    # To keep the application simple, we are using links within email to
+    # submit missed spam and false positives.
     #
     email_notification = app.config['EMAIL_NOTIFICATION']
     if email_notification:
         email_notification = email_notification.lower()
-    if email_notification == "yes":
-        email_to = app.config['EMAIL_TO']
-        sendgrid_api_key = app.config['SENDGRID_API_KEY']
-        if not (email_to and sendgrid_api_key):
+
+    spam_prevention = app.config['SPAM_PREVENTION']
+    if spam_prevention:
+        spam_prevention = spam_prevention.lower()
+
+    if spam_prevention == "yes":
+        #
+        # Check for spam and send email with links as described above
+        #
+
+        if not check_email_env_variables():
             app.logger.info("Required environment variables missing"
-                  " for email notification")
+                  " for email notification - spam prevention")
+        else:
+            retval, is_spam = spam_check()
+            if not retval:
+                app.logger.info("Problem encountered during spam check")
+            elif is_spam:
+                retval = send_spam_email()
+            else:
+                retval = send_not_spam_email()
+    elif email_notification == "yes":
+        #
+        # Send a regular email notification (without spam-related links)
+        #
+        if not check_email_env_variables():
+            app.logger.info("Required environment variables missing"
+                  " for email notification - regular email notification")
         else:
             email_str = generate_email_str(request.form['name'], message,
                 date_str, request.form['email'], website_value)
