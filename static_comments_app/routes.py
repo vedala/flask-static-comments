@@ -211,17 +211,14 @@ def spam_check():
 
     return (True, is_spam)
 
-def send_spam_email(sendgrid_api_key, email_to, email_str):
+def send_spam_email(sendgrid_api_key, email_to, email_str, comment_id):
     sg = sendgrid.SendGridAPIClient(apikey=sendgrid_api_key)
     from_email = Email("no_reply@flask_static_comments.com")
     to_email = Email(email_to)
     subject = "A comment was submitted on your blog"
-
-    random_str = generate_random_str(16)
-
     email_str += "<br>This comment has been identified as spam, \
                  click the link below to mark the comment as valid.<br><br>"
-    email_str += render_template('is_spam.html', random_str=random_str)
+    email_str += render_template('is_spam.html', comment_id=comment_id)
     content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
@@ -232,7 +229,7 @@ def send_spam_email(sendgrid_api_key, email_to, email_str):
 
     return True
 
-def send_not_spam_email(sendgrid_api_key, email_to, email_str):
+def send_not_spam_email(sendgrid_api_key, email_to, email_str, comment_id):
     sg = sendgrid.SendGridAPIClient(apikey=sendgrid_api_key)
     from_email = Email("no_reply@flask_static_comments.com")
     to_email = Email(email_to)
@@ -262,8 +259,8 @@ def check_email_env_variables():
 def mark_it_spam(random_str):
     return "marked as spam"
 
-@app.route('/mark_it_valid/<random_str>')
-def mark_it_valid(random_str):
+@app.route('/mark_it_valid/<comment_id>')
+def mark_it_valid(comment_id):
     return "marked as valid"
 
 def save_comment_to_database():
@@ -283,6 +280,8 @@ def save_comment_to_database():
         comment_content=comment_content, website=website)
     db.session.add(comment)
     db.session.commit()
+
+    return comment.id
 
 @app.route('/comment/<submitted_token>', methods=["POST"])
 def comments(submitted_token):
@@ -341,25 +340,26 @@ def comments(submitted_token):
             retval, is_spam = spam_check()
             if not retval:
                 app.logger.info("Problem encountered during spam check")
-            elif is_spam:
-                email_str = generate_email_str(request.form['name'], message,
-                    date_str, request.form['email'], website_value,
-                    request.form['slug'])
-                retval = send_spam_email(app.config['SENDGRID_API_KEY'],
-                                         app.config['EMAIL_TO'],
-                                         email_str)
-                if not retval:
-                    app.logger.info("Problem encountered in send_email")
             else:
-                email_str = generate_email_str(request.form['name'], message,
-                    date_str, request.form['email'], website_value,
-                    request.form['slug'])
-                retval = send_not_spam_email(app.config['SENDGRID_API_KEY'],
-                                         app.config['EMAIL_TO'],
-                                         email_str)
-                if not retval:
-                    app.logger.info("Problem encountered in send_email")
-        save_comment_to_database()
+                comment_id = save_comment_to_database()
+                if is_spam:
+                    email_str = generate_email_str(request.form['name'], message,
+                        date_str, request.form['email'], website_value,
+                        request.form['slug'])
+                    retval = send_spam_email(app.config['SENDGRID_API_KEY'],
+                                            app.config['EMAIL_TO'],
+                                            email_str, comment_id)
+                    if not retval:
+                        app.logger.info("Problem encountered in send_spam_email")
+                else:
+                    email_str = generate_email_str(request.form['name'], message,
+                        date_str, request.form['email'], website_value,
+                        request.form['slug'])
+                    retval = send_not_spam_email(app.config['SENDGRID_API_KEY'],
+                                            app.config['EMAIL_TO'],
+                                            email_str, comment_id)
+                    if not retval:
+                        app.logger.info("Problem encountered in send_email")
     elif email_notification == "yes":
         #
         # Send a regular email notification (without spam-related links)
