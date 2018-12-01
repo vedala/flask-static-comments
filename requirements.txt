@@ -13,6 +13,7 @@ Jinja2==2.10
 jwcrypto==0.5.0
 MarkupSafe==1.0
 pycparser==2.19
+pykismet3==0.1.1
 python-dateutil==2.7.3
 python-dotenv==0.9.1
 python-http-client==3.1.0
