@@ -198,10 +198,7 @@ def spam_check():
             'comment_type': comment_type,
             'comment_author': comment_author,
             'comment_author_email': comment_author_email,
-        #    'comment_author': 'viagra-test-123',
-        #    'comment_author_email': 'akismet-guaranteed-spam@example.com',
             'comment_content': comment_content,
-        #    'user_role': 'administrator',
             'website': website
         })
     except AkismetError as e:
