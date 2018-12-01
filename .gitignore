@@ -10,3 +10,4 @@ build/
 *.egg-info/
 logs/
 .env
+app.db

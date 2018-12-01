@@ -29,3 +29,6 @@ class Config(object):
     # Variables for spam prevention
     SPAM_PREVENTION = os.environ.get('SPAM_PREVENTION') or 'no'
     AKISMET_API_KEY = os.environ.get('AKISMET_API_KEY')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'app.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False

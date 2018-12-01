@@ -4,10 +4,14 @@ import logging
 from logging.handlers import SMTPHandler, RotatingFileHandler
 import os
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(Config)
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 if not app.debug:
     #
@@ -50,4 +54,4 @@ if not app.debug:
     app.logger.setLevel(logging.INFO)
     app.logger.info('Flask Static Comments startup')
 
-from static_comments_app import routes
+from static_comments_app import routes, models
