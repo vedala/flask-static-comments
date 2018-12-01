@@ -1,6 +1,7 @@
 from flask import redirect, request, url_for, make_response, jsonify, \
     render_template
-from static_comments_app import app
+from static_comments_app import app, db
+from static_comments_app.models import Comment
 import random
 import string
 import github3
@@ -265,6 +266,24 @@ def mark_it_spam(random_str):
 def mark_it_valid(random_str):
     return "marked as valid"
 
+def save_comment_to_database():
+    user_ip = request.remote_addr
+    user_agent = str(request.user_agent)
+    referrer = request.environ.get('HTTP_REFERER') or "unknown"
+    comment_type = "comment"
+    comment_author = request.form['name']
+    comment_author_email = request.form['email']
+    comment_content = request.form['message']
+    website = request.form['website']
+
+    comment = Comment(user_ip=user_ip, user_agent=user_agent,
+        referrer=referrer, comment_type=comment_type,
+        comment_author=comment_author,
+        comment_author_email=comment_author_email,
+        comment_content=comment_content, website=website)
+    db.session.add(comment)
+    db.session.commit()
+
 @app.route('/comment/<submitted_token>', methods=["POST"])
 def comments(submitted_token):
     github_token = app.config['GITHUB_TOKEN']
@@ -340,6 +359,7 @@ def comments(submitted_token):
                                          email_str)
                 if not retval:
                     app.logger.info("Problem encountered in send_email")
+        save_comment_to_database()
     elif email_notification == "yes":
         #
         # Send a regular email notification (without spam-related links)
@@ -358,7 +378,8 @@ def comments(submitted_token):
                 app.logger.info("Problem encountered in send_email")
 
     #
-    # Generate data to be written to file and encode it
+    # Generate data to be written to file and encode it and create a pull
+    # request.
     #
     file_str = generate_file_str(request.form['name'], message, date_str,
                                 gravatar_hash, website_value)
