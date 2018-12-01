@@ -254,7 +254,27 @@ def check_email_env_variables():
 
 @app.route('/mark_it_spam/<comment_id>')
 def mark_it_spam(comment_id):
-    return "marked as spam"
+    comment = Comment.query.filter_by(id=comment_id).first()
+    if comment is None:
+        return "No such comment"
+    else:
+        a = Akismet(blog_url="http://a_blog.com/first-post",
+                    user_agent=comment.user_agent)
+        a.api_key = app.config['AKISMET_API_KEY']
+
+        a.submit_spam({'user_ip': comment.user_ip,
+            'user_agent': comment.user_agent,
+            'referrer': comment.referrer,
+            'comment_type': comment.comment_type,
+            'comment_author': comment.comment_author,
+            'comment_author_email': comment.comment_author_email,
+            'comment_content': comment.comment_content,
+            'website': comment.website
+        })
+        db.session.delete(comment)
+        db.session.commit()
+
+    return "The comment was submitted as spam"
 
 @app.route('/mark_it_valid/<comment_id>')
 def mark_it_valid(comment_id):
@@ -278,7 +298,7 @@ def mark_it_valid(comment_id):
         db.session.delete(comment)
         db.session.commit()
 
-    return "The comment was submitted as valid."
+    return "The comment was submitted as valid"
 
 def save_comment_to_database():
     user_ip = request.remote_addr
