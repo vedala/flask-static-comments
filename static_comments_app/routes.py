@@ -196,10 +196,10 @@ def spam_check():
             'user_agent': user_agent,
             'referrer': referrer,
             'comment_type': comment_type,
-        #    'comment_author': comment_author,
-        #    'comment_author_email': comment_author_email,
-            'comment_author': 'viagra-test-123',
-            'comment_author_email': 'akismet-guaranteed-spam@example.com',
+            'comment_author': comment_author,
+            'comment_author_email': comment_author_email,
+        #    'comment_author': 'viagra-test-123',
+        #    'comment_author_email': 'akismet-guaranteed-spam@example.com',
             'comment_content': comment_content,
         #    'user_role': 'administrator',
             'website': website
@@ -234,12 +234,9 @@ def send_not_spam_email(sendgrid_api_key, email_to, email_str, comment_id):
     from_email = Email("no_reply@flask_static_comments.com")
     to_email = Email(email_to)
     subject = "A comment was submitted on your blog"
-
-    random_str = generate_random_str(16)
-
     email_str += "<br>This comment was identified as a valid comment, \
                  click the link below to mark the comment as spam.<br><br>"
-    email_str += render_template('is_valid.html', random_str=random_str)
+    email_str += render_template('is_valid.html', comment_id=comment_id)
     content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
@@ -255,8 +252,8 @@ def check_email_env_variables():
     sendgrid_api_key = app.config['SENDGRID_API_KEY']
     return email_to and sendgrid_api_key
 
-@app.route('/mark_it_spam/<random_str>')
-def mark_it_spam(random_str):
+@app.route('/mark_it_spam/<comment_id>')
+def mark_it_spam(comment_id):
     return "marked as spam"
 
 @app.route('/mark_it_valid/<comment_id>')
