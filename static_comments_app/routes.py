@@ -93,8 +93,9 @@ def generate_file_str(name, message, date_str, gravatar_hash, website_value):
     file_str += 'website: ' + website_value + '\n'
     return file_str
 
-def generate_email_str(name, message, date_str, email, website_value):
+def generate_email_str(name, message, date_str, email, website_value, slug):
     email_str = '<pre>'
+    email_str += 'blog: ' + slug + '<br><br>'
     email_str += 'name: ' + name + '<br>'
     email_str += 'message: ' + message + '<br>'
     email_str += 'date: ' + date_str + '<br>'
@@ -194,11 +195,12 @@ def spam_check():
             'user_agent': user_agent,
             'referrer': referrer,
             'comment_type': comment_type,
-        #    'comment_author': comment_author,
-        #    'comment_author_email': comment_author_email,
-            'comment_author': 'viagra-test-123',
-            'comment_author_email': 'akismet-guaranteed-spam@example.com',
+            'comment_author': comment_author,
+            'comment_author_email': comment_author_email,
+        #    'comment_author': 'viagra-test-123',
+        #    'comment_author_email': 'akismet-guaranteed-spam@example.com',
             'comment_content': comment_content,
+            'user_role': 'administrator',
             'website': website
         })
     except AkismetError as e:
@@ -322,13 +324,15 @@ def comments(submitted_token):
                 app.logger.info("Problem encountered during spam check")
             elif is_spam:
                 email_str = generate_email_str(request.form['name'], message,
-                    date_str, request.form['email'], website_value)
+                    date_str, request.form['email'], website_value,
+                    request.form['slug'])
                 retval = send_spam_email(app.config['SENDGRID_API_KEY'],
                                          app.config['EMAIL_TO'],
                                          email_str)
             else:
                 email_str = generate_email_str(request.form['name'], message,
-                    date_str, request.form['email'], website_value)
+                    date_str, request.form['email'], website_value,
+                    request.form['slug'])
                 retval = send_not_spam_email(app.config['SENDGRID_API_KEY'],
                                          app.config['EMAIL_TO'],
                                          email_str)
@@ -341,8 +345,12 @@ def comments(submitted_token):
                   " for email notification - regular email notification")
         else:
             email_str = generate_email_str(request.form['name'], message,
-                date_str, request.form['email'], website_value)
-            if not send_email(sendgrid_api_key, email_to, email_str):
+                date_str, request.form['email'], website_value,
+                request.form['slug'])
+            retval = send_email(app.config['SENDGRID_API_KEY'],
+                            app.config['EMAIL_TO'],
+                            email_str)
+            if not retval:
                 app.logger.info("Problem encountered in send_email")
 
     #
