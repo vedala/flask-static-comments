@@ -195,12 +195,12 @@ def spam_check():
             'user_agent': user_agent,
             'referrer': referrer,
             'comment_type': comment_type,
-            'comment_author': comment_author,
-            'comment_author_email': comment_author_email,
-        #    'comment_author': 'viagra-test-123',
-        #    'comment_author_email': 'akismet-guaranteed-spam@example.com',
+        #    'comment_author': comment_author,
+        #    'comment_author_email': comment_author_email,
+            'comment_author': 'viagra-test-123',
+            'comment_author_email': 'akismet-guaranteed-spam@example.com',
             'comment_content': comment_content,
-            'user_role': 'administrator',
+        #    'user_role': 'administrator',
             'website': website
         })
     except AkismetError as e:
@@ -329,6 +329,8 @@ def comments(submitted_token):
                 retval = send_spam_email(app.config['SENDGRID_API_KEY'],
                                          app.config['EMAIL_TO'],
                                          email_str)
+                if not retval:
+                    app.logger.info("Problem encountered in send_email")
             else:
                 email_str = generate_email_str(request.form['name'], message,
                     date_str, request.form['email'], website_value,
@@ -336,6 +338,8 @@ def comments(submitted_token):
                 retval = send_not_spam_email(app.config['SENDGRID_API_KEY'],
                                          app.config['EMAIL_TO'],
                                          email_str)
+                if not retval:
+                    app.logger.info("Problem encountered in send_email")
     elif email_notification == "yes":
         #
         # Send a regular email notification (without spam-related links)
