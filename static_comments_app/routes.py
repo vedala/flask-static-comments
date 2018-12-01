@@ -218,8 +218,7 @@ def send_spam_email(sendgrid_api_key, email_to, email_str):
 
     email_str += "<br>This comment has been identified as spam, \
                  click the link below to mark the comment as valid.<br><br>"
-    email_str += render_template(
-        'is_spam.html', email_str=email_str, random_str=random_str)
+    email_str += render_template('is_spam.html', random_str=random_str)
     content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
@@ -236,8 +235,11 @@ def send_not_spam_email(sendgrid_api_key, email_to, email_str):
     to_email = Email(email_to)
     subject = "A comment was submitted on your blog"
 
-    email_str += "\n\nThis comment has been identified as valid (not spam).\n"
+    random_str = generate_random_str(16)
 
+    email_str += "<br>This comment was identified as a valid comment, \
+                 click the link below to mark the comment as spam.<br><br>"
+    email_str += render_template('is_valid.html', random_str=random_str)
     content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
@@ -255,7 +257,11 @@ def check_email_env_variables():
 
 @app.route('/mark_it_spam/<random_str>')
 def mark_it_spam(random_str):
-    pass
+    return "marked as spam"
+
+@app.route('/mark_it_valid/<random_str>')
+def mark_it_valid(random_str):
+    return "marked as valid"
 
 @app.route('/comment/<submitted_token>', methods=["POST"])
 def comments(submitted_token):
