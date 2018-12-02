@@ -104,8 +104,9 @@ def generate_email_str(name, message, date_str, email, website_value, slug):
     email_str += 'website: ' + website_value + '<br></pre>'
     return email_str
 
-def create_github_pull_request(github_token, \
-    github_username, github_repo_name, slug, content):
+def create_github_pull_request(github_token, github_username, \
+    github_repo_name, slug, name, message, date_str, gravatar_hash, \
+    website):
     #
     # Authenticate the github account and get the repository object
     #
@@ -140,6 +141,10 @@ def create_github_pull_request(github_token, \
         app.logger.info("Error in call to github3 {} method: {}".format(
                                      "repository create_ref()", str(e)))
         return False
+
+    file_str = generate_file_str(name, message, date_str, gravatar_hash,
+                                 website)
+    content = bytes(file_str, 'utf-8')
 
     #
     # create a file in the just created branch with data from variable "content"
@@ -196,10 +201,11 @@ def spam_check():
             'user_agent': user_agent,
             'referrer': referrer,
             'comment_type': comment_type,
-        #    'comment_author': comment_author,
-        #    'comment_author_email': comment_author_email,
-            'comment_author': 'viagra-test-123',
-            'comment_author_email': 'akismet-guaranteed-spam@example.com',
+            'comment_author': comment_author,
+            'comment_author_email': comment_author_email,
+        #    'comment_author': 'viagra-test-123',
+        #    'comment_author_email': 'akismet-guaranteed-spam@example.com',
+            'user_role': 'administrator',
             'comment_content': comment_content,
             'website': website
         })
@@ -255,7 +261,8 @@ def check_email_env_variables():
 def mark_it_spam(comment_id):
     comment = Comment.query.filter_by(id=comment_id).first()
     if comment is None:
-        return "No such comment"
+        response = make_response(
+            jsonify({'not found': 'No such comment'}), 404)
     else:
         a = Akismet(blog_url="http://a_blog.com/first-post",
                     user_agent=comment.user_agent)
@@ -272,14 +279,18 @@ def mark_it_spam(comment_id):
         })
         db.session.delete(comment)
         db.session.commit()
+        app.logger.info("The comment was submitted as spam")
+        response = make_response(
+            jsonify({'success': 'The comment was submitted as spam'}), 200)
 
-    return "The comment was submitted as spam"
+    return response
 
 @app.route('/mark_it_valid/<comment_id>')
 def mark_it_valid(comment_id):
     comment = Comment.query.filter_by(id=comment_id).first()
     if comment is None:
-        return "No such comment"
+        response = make_response(
+            jsonify({'not found': 'No such comment'}), 404)
     else:
         a = Akismet(blog_url="http://a_blog.com/first-post",
                     user_agent=comment.user_agent)
@@ -296,31 +307,29 @@ def mark_it_valid(comment_id):
         })
 
         date_str = get_current_datetime_str()
-        author_name = comment.comment_author
+        name = comment.comment_author
         gravatar_hash = create_gravatar_hash(comment.comment_author_email)
         website_value = comment.website
         message = comment.comment_content
         slug = comment.slug
 
-        file_str = generate_file_str(author_name, message, date_str,
-                    gravatar_hash, website_value)
-        content = bytes(file_str, 'utf-8')
-
         github_token = app.config['GITHUB_TOKEN']
         github_username = app.config['GITHUB_USERNAME']
         github_repo_name = app.config['GITHUB_REPO_NAME']
 
-        if not create_github_pull_request(github_token, \
-            github_username, github_repo_name, slug, content):
+        if not create_github_pull_request(github_token, github_username, \
+            github_repo_name, slug, name, message, date_str, \
+            gravatar_hash, website_value):
             app.logger.info("Problem encountered during creation of pull request")
             response = make_response(jsonify({'error': 'Internal Error'}), 500)
         else:
             app.logger.info("Pull request created successfully")
+            db.session.delete(comment)
+            db.session.commit()
+            response = make_response(
+                jsonify({'success': 'The comment was submitted as valid'}), 200)
 
-        db.session.delete(comment)
-        db.session.commit()
-
-    return "The comment was submitted as valid"
+    return response
 
 def save_comment_to_database():
     user_ip = request.remote_addr
@@ -365,10 +374,12 @@ def comments(submitted_token):
             jsonify({'error': 'Invalid service token supplied'}), 400)
         return response
 
+    form_name = request.form['name']
     date_str = get_current_datetime_str()
     gravatar_hash = create_gravatar_hash(request.form['email'])
     website_value = website_field_check_scheme()
     message = process_message()
+    form_slug = request.form['slug']
 
     #
     # We are using akismet spam prevention. Akismet provides spam check call
@@ -423,13 +434,9 @@ def comments(submitted_token):
                     if not retval:
                         app.logger.info("Problem encountered in send_email")
 
-                    # prepare and create pull request
-                    file_str = generate_file_str(request.form['name'], message, date_str,
-                                gravatar_hash, website_value)
-                    content = bytes(file_str, 'utf-8')
-
-                    if not create_github_pull_request(github_token, \
-                        github_username, github_repo_name, request.form['slug'], content):
+                    if not create_github_pull_request(github_token, github_username, \
+                        github_repo_name, form_slug, form_name, message, date_str, \
+                        gravatar_hash, website_value):
                         app.logger.info("Problem encountered during creation of pull request")
                         response = make_response(jsonify({'error': 'Internal Error'}), 500)
                     else:
@@ -452,35 +459,22 @@ def comments(submitted_token):
             if not retval:
                 app.logger.info("Problem encountered in send_email")
 
-            # prepare and create pull request
-            file_str = generate_file_str(request.form['name'], message, date_str,
-                        gravatar_hash, website_value)
-            content = bytes(file_str, 'utf-8')
-
-            if not create_github_pull_request(github_token, \
-                github_username, github_repo_name, request.form['slug'], content):
+            if not create_github_pull_request(github_token, github_username, \
+                github_repo_name, form_slug, form_name, message, date_str, \
+                gravatar_hash, website_value):
                 app.logger.info("Problem encountered during creation of pull request")
                 response = make_response(jsonify({'error': 'Internal Error'}), 500)
             else:
                 response = make_response(
                     jsonify({'success': 'Comment submitted successfully'}), 201)
     else:
-        # prepare and create pull request
-        file_str = generate_file_str(request.form['name'], message, date_str,
-                    gravatar_hash, website_value)
-        content = bytes(file_str, 'utf-8')
-
-        if not create_github_pull_request(github_token, \
-            github_username, github_repo_name, request.form['slug'], content):
+        if not create_github_pull_request(github_token, github_username, \
+            github_repo_name, form_slug, form_name, message, date_str, \
+             gravatar_hash, website_value):
             app.logger.info("Problem encountered during creation of pull request")
             response = make_response(jsonify({'error': 'Internal Error'}), 500)
         else:
             response = make_response(
                 jsonify({'success': 'Comment submitted successfully'}), 201)
-
-    #
-    # Generate data to be written to file and encode it and create a pull
-    # request.
-    #
 
     return response
