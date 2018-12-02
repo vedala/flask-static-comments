@@ -196,8 +196,10 @@ def spam_check():
             'user_agent': user_agent,
             'referrer': referrer,
             'comment_type': comment_type,
-            'comment_author': comment_author,
-            'comment_author_email': comment_author_email,
+        #    'comment_author': comment_author,
+        #    'comment_author_email': comment_author_email,
+            'comment_author': 'viagra-test-123',
+            'comment_author_email': 'akismet-guaranteed-spam@example.com',
             'comment_content': comment_content,
             'website': website
         })
@@ -292,6 +294,29 @@ def mark_it_valid(comment_id):
             'comment_content': comment.comment_content,
             'website': comment.website
         })
+
+        date_str = get_current_datetime_str()
+        author_name = comment.comment_author
+        gravatar_hash = create_gravatar_hash(comment.comment_author_email)
+        website_value = comment.website
+        message = comment.comment_content
+        slug = comment.slug
+
+        file_str = generate_file_str(author_name, message, date_str,
+                    gravatar_hash, website_value)
+        content = bytes(file_str, 'utf-8')
+
+        github_token = app.config['GITHUB_TOKEN']
+        github_username = app.config['GITHUB_USERNAME']
+        github_repo_name = app.config['GITHUB_REPO_NAME']
+
+        if not create_github_pull_request(github_token, \
+            github_username, github_repo_name, slug, content):
+            app.logger.info("Problem encountered during creation of pull request")
+            response = make_response(jsonify({'error': 'Internal Error'}), 500)
+        else:
+            app.logger.info("Pull request created successfully")
+
         db.session.delete(comment)
         db.session.commit()
 
@@ -304,14 +329,15 @@ def save_comment_to_database():
     comment_type = "comment"
     comment_author = request.form['name']
     comment_author_email = request.form['email']
-    comment_content = request.form['message']
-    website = request.form['website']
+    comment_content = process_message()
+    website = website_field_check_scheme()
+    slug = request.form['slug']
 
     comment = Comment(user_ip=user_ip, user_agent=user_agent,
         referrer=referrer, comment_type=comment_type,
         comment_author=comment_author,
         comment_author_email=comment_author_email,
-        comment_content=comment_content, website=website)
+        comment_content=comment_content, website=website, slug=slug)
     db.session.add(comment)
     db.session.commit()
 
@@ -385,6 +411,8 @@ def comments(submitted_token):
                                             email_str, comment_id)
                     if not retval:
                         app.logger.info("Problem encountered in send_spam_email")
+                    response = make_response(
+                        jsonify({'success': 'Comment submitted successfully'}), 201)
                 else:
                     email_str = generate_email_str(request.form['name'], message,
                         date_str, request.form['email'], website_value,
@@ -394,6 +422,19 @@ def comments(submitted_token):
                                             email_str, comment_id)
                     if not retval:
                         app.logger.info("Problem encountered in send_email")
+
+                    # prepare and create pull request
+                    file_str = generate_file_str(request.form['name'], message, date_str,
+                                gravatar_hash, website_value)
+                    content = bytes(file_str, 'utf-8')
+
+                    if not create_github_pull_request(github_token, \
+                        github_username, github_repo_name, request.form['slug'], content):
+                        app.logger.info("Problem encountered during creation of pull request")
+                        response = make_response(jsonify({'error': 'Internal Error'}), 500)
+                    else:
+                        response = make_response(
+                            jsonify({'success': 'Comment submitted successfully'}), 201)
     elif email_notification == "yes":
         #
         # Send a regular email notification (without spam-related links)
@@ -411,20 +452,35 @@ def comments(submitted_token):
             if not retval:
                 app.logger.info("Problem encountered in send_email")
 
+            # prepare and create pull request
+            file_str = generate_file_str(request.form['name'], message, date_str,
+                        gravatar_hash, website_value)
+            content = bytes(file_str, 'utf-8')
+
+            if not create_github_pull_request(github_token, \
+                github_username, github_repo_name, request.form['slug'], content):
+                app.logger.info("Problem encountered during creation of pull request")
+                response = make_response(jsonify({'error': 'Internal Error'}), 500)
+            else:
+                response = make_response(
+                    jsonify({'success': 'Comment submitted successfully'}), 201)
+    else:
+        # prepare and create pull request
+        file_str = generate_file_str(request.form['name'], message, date_str,
+                    gravatar_hash, website_value)
+        content = bytes(file_str, 'utf-8')
+
+        if not create_github_pull_request(github_token, \
+            github_username, github_repo_name, request.form['slug'], content):
+            app.logger.info("Problem encountered during creation of pull request")
+            response = make_response(jsonify({'error': 'Internal Error'}), 500)
+        else:
+            response = make_response(
+                jsonify({'success': 'Comment submitted successfully'}), 201)
+
     #
     # Generate data to be written to file and encode it and create a pull
     # request.
     #
-    file_str = generate_file_str(request.form['name'], message, date_str,
-                                gravatar_hash, website_value)
-    content = bytes(file_str, 'utf-8')
-
-    if not create_github_pull_request(github_token, \
-        github_username, github_repo_name, request.form['slug'], content):
-        app.logger.info("Problem encountered during creation of pull request")
-        response = make_response(jsonify({'error': 'Internal Error'}), 500)
-    else:
-        response = make_response(
-            jsonify({'success': 'Comment submitted successfully'}), 201)
 
     return response
