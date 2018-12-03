@@ -105,7 +105,7 @@ def generate_email_str(name, message, date_str, email, website_value, slug):
     return email_str
 
 def create_github_pull_request(github_token, github_username, \
-    github_repo_name, slug, name, message, date_str, gravatar_hash, \
+    github_repo_name, slug, name, message, date_str, email, \
     website):
     #
     # Authenticate the github account and get the repository object
@@ -142,6 +142,7 @@ def create_github_pull_request(github_token, github_username, \
                                      "repository create_ref()", str(e)))
         return False
 
+    gravatar_hash = create_gravatar_hash(email)
     file_str = generate_file_str(name, message, date_str, gravatar_hash,
                                  website)
     content = bytes(file_str, 'utf-8')
@@ -308,7 +309,7 @@ def mark_it_valid(comment_id):
 
         date_str = get_current_datetime_str()
         name = comment.comment_author
-        gravatar_hash = create_gravatar_hash(comment.comment_author_email)
+        email = comment.comment_author_email
         website_value = comment.website
         message = comment.comment_content
         slug = comment.slug
@@ -319,7 +320,7 @@ def mark_it_valid(comment_id):
 
         if not create_github_pull_request(github_token, github_username, \
             github_repo_name, slug, name, message, date_str, \
-            gravatar_hash, website_value):
+            email, website_value):
             app.logger.info("Problem encountered during creation of pull request")
             response = make_response(jsonify({'error': 'Internal Error'}), 500)
         else:
@@ -376,7 +377,7 @@ def comments(submitted_token):
 
     form_name = request.form['name']
     date_str = get_current_datetime_str()
-    gravatar_hash = create_gravatar_hash(request.form['email'])
+    form_email = request.form['email']
     website_value = website_field_check_scheme()
     message = process_message()
     form_slug = request.form['slug']
@@ -436,7 +437,7 @@ def comments(submitted_token):
 
                     if not create_github_pull_request(github_token, github_username, \
                         github_repo_name, form_slug, form_name, message, date_str, \
-                        gravatar_hash, website_value):
+                        form_email, website_value):
                         app.logger.info("Problem encountered during creation of pull request")
                         response = make_response(jsonify({'error': 'Internal Error'}), 500)
                     else:
@@ -461,7 +462,7 @@ def comments(submitted_token):
 
             if not create_github_pull_request(github_token, github_username, \
                 github_repo_name, form_slug, form_name, message, date_str, \
-                gravatar_hash, website_value):
+                form_email, website_value):
                 app.logger.info("Problem encountered during creation of pull request")
                 response = make_response(jsonify({'error': 'Internal Error'}), 500)
             else:
@@ -470,7 +471,7 @@ def comments(submitted_token):
     else:
         if not create_github_pull_request(github_token, github_username, \
             github_repo_name, form_slug, form_name, message, date_str, \
-             gravatar_hash, website_value):
+            form_email, website_value):
             app.logger.info("Problem encountered during creation of pull request")
             response = make_response(jsonify({'error': 'Internal Error'}), 500)
         else:
