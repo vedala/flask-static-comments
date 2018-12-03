@@ -196,9 +196,6 @@ def spam_check(user_ip, user_agent, referrer, name, email, message, \
             'comment_type': comment_type,
             'comment_author': name,
             'comment_author_email': email,
-        #    'comment_author': 'viagra-test-123',
-        #    'comment_author_email': 'akismet-guaranteed-spam@example.com',
-            'user_role': 'administrator',
             'comment_content': message,
             'website': website
         })
