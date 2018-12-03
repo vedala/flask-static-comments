@@ -11,6 +11,7 @@ class Comment(db.Model):
     comment_content = db.Column(db.String(512))
     website = db.Column(db.String(64))
     slug = db.Column(db.String(128))
+    post_url = db.Column(db.String(128))
 
     def __repr__(self):
         return '<Comment {}>'.format(self.id)

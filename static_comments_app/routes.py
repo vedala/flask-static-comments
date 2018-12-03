@@ -176,7 +176,7 @@ def create_github_pull_request(github_token, github_username, \
     return True
 
 def spam_check(user_ip, user_agent, referrer, name, email, message, \
-               website, base_url):
+               website, post_url):
 
     comment_type = "comment"
 
@@ -186,7 +186,7 @@ def spam_check(user_ip, user_agent, referrer, name, email, message, \
             "Required environment variable AKISMET_API_KEY missing")
         return (False, None)
 
-    a = Akismet(blog_url=base_url,
+    a = Akismet(blog_url=post_url,
                 api_key=akismet_api_key,
                 user_agent=user_agent)
 
@@ -258,7 +258,7 @@ def mark_it_spam(comment_id):
         response = make_response(
             jsonify({'not found': 'No such comment'}), 404)
     else:
-        a = Akismet(blog_url="http://a_blog.com/first-post",
+        a = Akismet(blog_url=comment.post_url,
                     user_agent=comment.user_agent)
         a.api_key = app.config['AKISMET_API_KEY']
 
@@ -286,7 +286,7 @@ def mark_it_valid(comment_id):
         response = make_response(
             jsonify({'not found': 'No such comment'}), 404)
     else:
-        a = Akismet(blog_url="http://a_blog.com/first-post",
+        a = Akismet(blog_url=comment.post_url,
                     user_agent=comment.user_agent)
         a.api_key = app.config['AKISMET_API_KEY']
 
@@ -326,13 +326,13 @@ def mark_it_valid(comment_id):
     return response
 
 def save_comment_to_database(user_ip, user_agent, referrer, name, \
-                             email, message, website, slug):
+                             email, message, website, slug, post_url):
     comment_type = "comment"
 
     comment = Comment(user_ip=user_ip, user_agent=user_agent,
-        referrer=referrer, comment_type=comment_type,
-        comment_author=name, comment_author_email=email,
-        comment_content=message, website=website, slug=slug)
+        referrer=referrer, comment_type=comment_type, comment_author=name,
+        comment_author_email=email, comment_content=message, website=website,
+        slug=slug, post_url=post_url)
     db.session.add(comment)
     db.session.commit()
 
@@ -397,15 +397,15 @@ def comments(submitted_token):
             user_ip = request.remote_addr
             user_agent = str(request.user_agent)
             referrer = request.environ.get('HTTP_REFERER') or "unknown"
+            post_url = request.form['post_url']
             retval, is_spam = spam_check(user_ip, user_agent, referrer,
-                form_name, form_email, message, website_value,
-                request.base_url)
+                form_name, form_email, message, website_value, post_url)
             if not retval:
                 app.logger.info("Problem encountered during spam check")
             else:
                 comment_id = save_comment_to_database(user_ip, user_agent,
                     referrer, form_name, form_email, message, website_value,
-                    form_slug)
+                    form_slug, post_url)
                 if is_spam:
                     email_str = generate_email_str(request.form['name'], message,
                         date_str, request.form['email'], website_value,

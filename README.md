@@ -113,3 +113,8 @@ A few items to keep in mind:
 
 * The server will treat the request as Cross-Site Script, so you need set the CORS headers. The application already sets the CORS header. But if you want you deployment to be fronted by a webserver such as Apache or Nginx, then you can set CORS headers in Apache/Nginx.
 * Use a real certificate if you want to use `https`. While we can choose to ignore certificate errors when accessing a web application, when accessing api endpoints via ajax calls, the front-end will fail silently.
+
+
+# Changes for spam prevention
+
+## jekyll_comments_form.html modified to include page_url hidden field
