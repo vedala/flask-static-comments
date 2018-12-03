@@ -213,7 +213,9 @@ def send_spam_email(sendgrid_api_key, email_to, email_str, comment_id):
     subject = "A comment was submitted on your blog"
     email_str += "<br>This comment has been identified as spam, \
                  click the link below to mark the comment as valid.<br><br>"
-    email_str += render_template('is_spam.html', comment_id=comment_id)
+    scheme = 'http' if app.debug else 'https'
+    email_str += render_template('is_spam.html', comment_id=comment_id,
+                                 scheme=scheme)
     content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
@@ -231,7 +233,9 @@ def send_not_spam_email(sendgrid_api_key, email_to, email_str, comment_id):
     subject = "A comment was submitted on your blog"
     email_str += "<br>This comment was identified as a valid comment, \
                  click the link below to mark the comment as spam.<br><br>"
-    email_str += render_template('is_valid.html', comment_id=comment_id)
+    scheme = 'http' if app.debug else 'https'
+    email_str += render_template('is_valid.html', comment_id=comment_id,
+                                 scheme=scheme)
     content = Content("text/html", email_str)
     mail = Mail(from_email, subject, to_email, content)
     try:
