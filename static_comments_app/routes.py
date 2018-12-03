@@ -54,19 +54,18 @@ def send_email(sendgrid_api_key, email_to, email_str):
 
     return True
 
-def website_field_check_scheme():
+def website_field_check_scheme(website_value):
     #
     # Prepend "http://" if no schema present in url entered by the user.
     #
     # This is required, since Jekyll treats schema-less url as relative
     # urls
-    if request.form.get('website'):
-        website_value = request.form['website']
+
+    website_return_value = website_value
+    if website_value != '':
         if not website_value.startswith('http'):
-            website_value = 'http://' + website_value
-    else:
-        website_value = ''
-    return website_value
+            website_return_value = 'http://' + website_value
+    return website_return_value
 
 def process_message():
     # Message processing
@@ -332,7 +331,7 @@ def mark_it_valid(comment_id):
 
     return response
 
-def save_comment_to_database():
+def save_comment_to_database(website):
     user_ip = request.remote_addr
     user_agent = str(request.user_agent)
     referrer = request.environ.get('HTTP_REFERER') or "unknown"
@@ -340,7 +339,6 @@ def save_comment_to_database():
     comment_author = request.form['name']
     comment_author_email = request.form['email']
     comment_content = process_message()
-    website = website_field_check_scheme()
     slug = request.form['slug']
 
     comment = Comment(user_ip=user_ip, user_agent=user_agent,
@@ -378,7 +376,7 @@ def comments(submitted_token):
     form_name = request.form['name']
     date_str = get_current_datetime_str()
     form_email = request.form['email']
-    website_value = website_field_check_scheme()
+    website_value = website_field_check_scheme(request.form.get('website', ''))
     message = process_message()
     form_slug = request.form['slug']
 
@@ -413,7 +411,7 @@ def comments(submitted_token):
             if not retval:
                 app.logger.info("Problem encountered during spam check")
             else:
-                comment_id = save_comment_to_database()
+                comment_id = save_comment_to_database(website_value)
                 if is_spam:
                     email_str = generate_email_str(request.form['name'], message,
                         date_str, request.form['email'], website_value,
