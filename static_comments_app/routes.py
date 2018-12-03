@@ -256,7 +256,8 @@ def check_spam_env_variables():
 
 @app.route('/mark_it_spam/<comment_id>')
 def mark_it_spam(comment_id):
-    comment = Comment.query.filter_by(id=comment_id).first()
+    comment = Comment.query.filter_by(
+                                id=comment_id, mark_for_delete=False).first()
     if comment is None:
         response = make_response(
             jsonify({'not found': 'No such comment'}), 404)
@@ -274,7 +275,7 @@ def mark_it_spam(comment_id):
             'comment_content': comment.comment_content,
             'website': comment.website
         })
-        db.session.delete(comment)
+        comment.mark_for_delete = True
         db.session.commit()
         app.logger.info("The comment was submitted as spam")
         response = make_response(
@@ -284,7 +285,8 @@ def mark_it_spam(comment_id):
 
 @app.route('/mark_it_valid/<comment_id>')
 def mark_it_valid(comment_id):
-    comment = Comment.query.filter_by(id=comment_id).first()
+    comment = Comment.query.filter_by(
+                                id=comment_id, mark_for_delete=False).first()
     if comment is None:
         response = make_response(
             jsonify({'not found': 'No such comment'}), 404)
@@ -321,7 +323,7 @@ def mark_it_valid(comment_id):
             response = make_response(jsonify({'error': 'Internal Error'}), 500)
         else:
             app.logger.info("Pull request created successfully")
-            db.session.delete(comment)
+            comment.mark_for_delete = True
             db.session.commit()
             response = make_response(
                 jsonify({'success': 'The comment was submitted as valid'}), 200)
