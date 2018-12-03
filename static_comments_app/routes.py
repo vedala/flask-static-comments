@@ -251,6 +251,10 @@ def check_email_env_variables():
     sendgrid_api_key = app.config['SENDGRID_API_KEY']
     return email_to and sendgrid_api_key
 
+def check_spam_env_variables():
+    akismet_api_key = app.config['AKISMET_API_KEY']
+    return akismet_api_key and check_email_env_variables()
+
 @app.route('/mark_it_spam/<comment_id>')
 def mark_it_spam(comment_id):
     comment = Comment.query.filter_by(id=comment_id).first()
@@ -390,9 +394,10 @@ def comments(submitted_token):
         # Check for spam and send email with links as described above
         #
 
-        if not check_email_env_variables():
+        if not check_spam_env_variables():
             app.logger.info("Required environment variables missing"
-                  " for email notification - spam prevention")
+                            " for spam prevention")
+            response = make_response(jsonify({'error': 'Internal Error'}), 500)
         else:
             user_ip = request.remote_addr
             user_agent = str(request.user_agent)
@@ -402,6 +407,8 @@ def comments(submitted_token):
                 form_name, form_email, message, website_value, post_url)
             if not retval:
                 app.logger.info("Problem encountered during spam check")
+                response = make_response(
+                    jsonify({'error': 'Internal Error'}), 500)
             else:
                 comment_id = save_comment_to_database(user_ip, user_agent,
                     referrer, form_name, form_email, message, website_value,
@@ -416,7 +423,7 @@ def comments(submitted_token):
                     if not retval:
                         app.logger.info("Problem encountered in send_spam_email")
                     response = make_response(
-                        jsonify({'success': 'Comment submitted successfully'}), 201)
+                        jsonify({'error': 'Internal Error'}), 500)
                 else:
                     email_str = generate_email_str(request.form['name'], message,
                         date_str, request.form['email'], website_value,
