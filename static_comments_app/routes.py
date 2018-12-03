@@ -67,7 +67,7 @@ def website_field_check_scheme(website_value):
             website_return_value = 'http://' + website_value
     return website_return_value
 
-def process_message():
+def process_message(submitted_message):
     # Message processing
     #     * This is necessary since we want to write the message as
     #       YAML's literal string (See the | character written below)
@@ -75,7 +75,7 @@ def process_message():
     #     * Replace beginning of string with two spaces
     #     * Replace a series of newlines with same number of
     #       newlines but two spaces are appended after the last newline
-    message = request.form['message']
+    message = submitted_message
     message = re.sub("\r\n", "\n", message)
     message = re.sub("^", "  ", message)
     pattern = re.compile("(\n+)")
@@ -364,7 +364,7 @@ def comments(submitted_token):
     date_str = get_current_datetime_str()
     form_email = request.form['email']
     website_value = website_field_check_scheme(request.form.get('website', ''))
-    message = process_message()
+    message = process_message(request.form['message'])
     form_slug = request.form['slug']
 
     #
