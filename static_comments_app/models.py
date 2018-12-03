@@ -12,6 +12,7 @@ class Comment(db.Model):
     website = db.Column(db.String(64))
     slug = db.Column(db.String(128))
     post_url = db.Column(db.String(128))
+    submit_datetime = db.Column(db.DateTime)
 
     def __repr__(self):
         return '<Comment {}>'.format(self.id)

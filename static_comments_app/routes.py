@@ -30,10 +30,9 @@ def create_gravatar_hash(email):
     m.update(email.strip().lower().encode("utf-8"))
     return m.hexdigest()
 
-def get_current_datetime_str():
-    today_dt = datetime.today()
-    date_obj = today_dt.date()
-    time_obj = today_dt.time()
+def get_current_datetime_str(inp_datetime):
+    date_obj = inp_datetime.date()
+    time_obj = inp_datetime.time()
     date_str = str(date_obj) + \
         ' {:0>2}:{:0>2}:{:0>2}'.format(time_obj.hour,
                                        time_obj.minute, time_obj.second)
@@ -304,7 +303,7 @@ def mark_it_valid(comment_id):
             'website': comment.website
         })
 
-        date_str = get_current_datetime_str()
+        date_str = get_current_datetime_str(comment.submit_datetime)
         name = comment.comment_author
         email = comment.comment_author_email
         website_value = comment.website
@@ -330,13 +329,13 @@ def mark_it_valid(comment_id):
     return response
 
 def save_comment_to_database(user_ip, user_agent, referrer, name, \
-                             email, message, website, slug, post_url):
+                 email, message, website, slug, post_url, submit_datetime):
     comment_type = "comment"
 
     comment = Comment(user_ip=user_ip, user_agent=user_agent,
         referrer=referrer, comment_type=comment_type, comment_author=name,
         comment_author_email=email, comment_content=message, website=website,
-        slug=slug, post_url=post_url)
+        slug=slug, post_url=post_url, submit_datetime=submit_datetime)
     db.session.add(comment)
     db.session.commit()
 
@@ -365,7 +364,8 @@ def comments(submitted_token):
         return response
 
     form_name = request.form['name']
-    date_str = get_current_datetime_str()
+    submit_datetime = datetime.today()
+    date_str = get_current_datetime_str(submit_datetime)
     form_email = request.form['email']
     website_value = website_field_check_scheme(request.form.get('website', ''))
     message = process_message(request.form['message'])
@@ -412,7 +412,7 @@ def comments(submitted_token):
             else:
                 comment_id = save_comment_to_database(user_ip, user_agent,
                     referrer, form_name, form_email, message, website_value,
-                    form_slug, post_url)
+                    form_slug, post_url, submit_datetime)
                 if is_spam:
                     email_str = generate_email_str(request.form['name'], message,
                         date_str, request.form['email'], website_value,
@@ -422,8 +422,11 @@ def comments(submitted_token):
                                             email_str, comment_id)
                     if not retval:
                         app.logger.info("Problem encountered in send_spam_email")
-                    response = make_response(
-                        jsonify({'error': 'Internal Error'}), 500)
+                        response = make_response(
+                            jsonify({'error': 'Internal Error'}), 500)
+                    else:
+                        response = make_response(jsonify(
+                            {'success': 'Comment submitted successfully'}), 201)
                 else:
                     email_str = generate_email_str(request.form['name'], message,
                         date_str, request.form['email'], website_value,
