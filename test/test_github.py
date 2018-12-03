@@ -11,7 +11,8 @@ class GithubTestCase(unittest.TestCase):
     def test_github3_login(self, mock_github3_login):
         routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
         mock_github3_login.assert_called_once_with(token="my-github-token")
 
     @patch('github3.login')
@@ -28,7 +29,8 @@ class GithubTestCase(unittest.TestCase):
 
         routes.create_github_pull_request("my-github-token",
             github_username, github_repo_name, "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         mock_repository.assert_called_once_with(github_username,
                                                 github_repo_name)
@@ -43,7 +45,8 @@ class GithubTestCase(unittest.TestCase):
 
         routes.create_github_pull_request("my-github-token",
             github_username, github_repo_name, "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         mock_generate_random_str.assert_called_once_with(16)
 
@@ -70,7 +73,8 @@ class GithubTestCase(unittest.TestCase):
 
         routes.create_github_pull_request("my-github-token",
             github_username, github_repo_name, "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         mock_create_ref.assert_called_once_with(
             "refs/heads/jekyll_comments_abcdef", sha_str)
@@ -104,7 +108,8 @@ class GithubTestCase(unittest.TestCase):
 
         routes.create_github_pull_request("my-github-token",
             github_username, github_repo_name, "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         mock_create_pull.assert_called_once_with(
             "Comment submission",
@@ -127,7 +132,8 @@ class GithubTestCase(unittest.TestCase):
 
         retval = routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
         self.assertEqual(False, retval)
 
     @patch('github3.login')
@@ -147,7 +153,8 @@ class GithubTestCase(unittest.TestCase):
 
         retval = routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         self.assertEqual(False, retval)
         mock_ref.assert_called_once_with("heads/master")
@@ -179,7 +186,8 @@ class GithubTestCase(unittest.TestCase):
 
         retval = routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         self.assertEqual(False, retval)
         mock_create_ref.assert_called_once_with(
@@ -215,15 +223,15 @@ class GithubTestCase(unittest.TestCase):
 
         retval = routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         self.assertEqual(False, retval)
         mock_create_file.assert_called_once_with(
             "_data/jekyll_comments/my-slug/abcdef.yml",
             "Create a new comment abcdef.yml",
-            "content-line-1\ncontent-line-2\n",
+            b'name: John Commenter\nmessage: content-line-1\ncontent-line-2\n\ndate: 2018-12-03 12:10:20\ngravatar: 19c7cf93d7e33c17730e5fccd7f4ab2e\nwebsite: johnswebsite.com\n',
             "refs/heads/jekyll_comments_abcdef")
-
     @patch('static_comments_app.routes.generate_random_str', return_value="abcdef")
     @patch('github3.login')
     def test_invalid_create_pull(self, mock_github3_login,
@@ -257,7 +265,8 @@ class GithubTestCase(unittest.TestCase):
 
         retval = routes.create_github_pull_request("my-github-token",
             "my-github-username", "my-github-repo-name", "my-slug",
-            "content-line-1\ncontent-line-2\n")
+            "John Commenter", "content-line-1\ncontent-line-2\n",
+            "2018-12-03 12:10:20", "j@example.com", "johnswebsite.com")
 
         self.assertEqual(False, retval)
         mock_create_pull.assert_called_once_with(
