@@ -331,21 +331,14 @@ def mark_it_valid(comment_id):
 
     return response
 
-def save_comment_to_database(website):
-    user_ip = request.remote_addr
-    user_agent = str(request.user_agent)
-    referrer = request.environ.get('HTTP_REFERER') or "unknown"
+def save_comment_to_database(user_ip, user_agent, referrer, name, \
+                             email, message, website, slug):
     comment_type = "comment"
-    comment_author = request.form['name']
-    comment_author_email = request.form['email']
-    comment_content = process_message()
-    slug = request.form['slug']
 
     comment = Comment(user_ip=user_ip, user_agent=user_agent,
         referrer=referrer, comment_type=comment_type,
-        comment_author=comment_author,
-        comment_author_email=comment_author_email,
-        comment_content=comment_content, website=website, slug=slug)
+        comment_author=name, comment_author_email=email,
+        comment_content=message, website=website, slug=slug)
     db.session.add(comment)
     db.session.commit()
 
@@ -411,7 +404,12 @@ def comments(submitted_token):
             if not retval:
                 app.logger.info("Problem encountered during spam check")
             else:
-                comment_id = save_comment_to_database(website_value)
+                user_ip = request.remote_addr
+                user_agent = str(request.user_agent)
+                referrer = request.environ.get('HTTP_REFERER') or "unknown"
+                comment_id = save_comment_to_database(user_ip, user_agent,
+                    referrer, form_name, form_email, message, website_value,
+                    form_slug)
                 if is_spam:
                     email_str = generate_email_str(request.form['name'], message,
                         date_str, request.form['email'], website_value,
