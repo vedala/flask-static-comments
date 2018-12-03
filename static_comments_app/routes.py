@@ -175,16 +175,10 @@ def create_github_pull_request(github_token, github_username, \
 
     return True
 
-def spam_check():
-    user_ip = request.remote_addr
-    user_agent = str(request.user_agent)
-    referrer = request.environ.get('HTTP_REFERER') or "unknown"
-    comment_type = "comment"
+def spam_check(user_ip, user_agent, referrer, name, email, message, \
+               website, base_url):
 
-    comment_author = request.form['name']
-    comment_author_email = request.form['email']
-    comment_content = request.form['message']
-    website = request.form['website']
+    comment_type = "comment"
 
     akismet_api_key = app.config['AKISMET_API_KEY']
     if not akismet_api_key:
@@ -192,7 +186,7 @@ def spam_check():
             "Required environment variable AKISMET_API_KEY missing")
         return (False, None)
 
-    a = Akismet(blog_url=request.base_url,
+    a = Akismet(blog_url=base_url,
                 api_key=akismet_api_key,
                 user_agent=user_agent)
 
@@ -201,12 +195,12 @@ def spam_check():
             'user_agent': user_agent,
             'referrer': referrer,
             'comment_type': comment_type,
-            'comment_author': comment_author,
-            'comment_author_email': comment_author_email,
+            'comment_author': name,
+            'comment_author_email': email,
         #    'comment_author': 'viagra-test-123',
         #    'comment_author_email': 'akismet-guaranteed-spam@example.com',
             'user_role': 'administrator',
-            'comment_content': comment_content,
+            'comment_content': message,
             'website': website
         })
     except AkismetError as e:
@@ -400,13 +394,15 @@ def comments(submitted_token):
             app.logger.info("Required environment variables missing"
                   " for email notification - spam prevention")
         else:
-            retval, is_spam = spam_check()
+            user_ip = request.remote_addr
+            user_agent = str(request.user_agent)
+            referrer = request.environ.get('HTTP_REFERER') or "unknown"
+            retval, is_spam = spam_check(user_ip, user_agent, referrer,
+                form_name, form_email, message, website_value,
+                request.base_url)
             if not retval:
                 app.logger.info("Problem encountered during spam check")
             else:
-                user_ip = request.remote_addr
-                user_agent = str(request.user_agent)
-                referrer = request.environ.get('HTTP_REFERER') or "unknown"
                 comment_id = save_comment_to_database(user_ip, user_agent,
                     referrer, form_name, form_email, message, website_value,
                     form_slug)
