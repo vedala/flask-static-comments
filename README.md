@@ -6,6 +6,13 @@ which is described in detail at [jekyll-comments](https://github.com/vedala/jeky
 The application in this repository is a flask application that accepts comment submissions from Jekyll-generated static websites and submits the comment information to the user's
 github repository as a pull request.
 
+## Inspiration
+
+This project is inspired by and derived from Damien Guard's project that is described
+in detail at the blog post [here](https://damieng.com/blog/2018/05/28/wordpress-to-jekyll-comments)
+and in the two github repositories: [here](https://github.com/damieng/jekyll-blog-comments) and
+[here](https://github.com/Azure-Functions/jekyll-blog-comments).
+
 ## Basic functionality
 
 You can be deploy the application and update your static blog repository to submit comments to
