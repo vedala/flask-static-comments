@@ -6,7 +6,7 @@ chardet==3.0.4
 Click==7.0
 cryptography==3.3.2
 Flask==1.0.2
-Flask-Cors==3.0.7
+Flask-Cors==3.0.9
 Flask-Migrate==2.3.1
 Flask-SQLAlchemy==2.3.2
 github3.py==1.2.0
