@@ -13,7 +13,7 @@ github3.py==1.2.0
 idna==2.7
 itsdangerous==1.1.0
 Jinja2==2.11.3
-jwcrypto==0.5.0
+jwcrypto==1.4
 Mako==1.0.7
 MarkupSafe==1.0
 pycparser==2.19
